@@ -22,6 +22,8 @@ public partial class ChannelGenManager : MonoBehaviour
     public float fsubcarriers = (float)200000; // kHz
 
     public bool OmniAntenna = false;
+
+
     //float EdgeEffectCoeff = -100.0f;
 
     [Space]
