@@ -463,7 +463,8 @@ public struct ParallelLoSDetection : IJobParallelFor
     [WriteOnly] public NativeArray<RaycastCommand> commands;
     public void Execute(int index)
     {
-        if (index < 3)
+        int number_of_links = Links.Length;
+        if (index < number_of_links)
         {
             int TxCarID = Links[index].x;
             int RxCarID = Links[index].y;
@@ -472,8 +473,8 @@ public struct ParallelLoSDetection : IJobParallelFor
         }
         else
         {
-            int TxCarID = Links[index - 3].y;
-            int RxCarID = Links[index - 3].x;
+            int TxCarID = Links[index - number_of_links].y;
+            int RxCarID = Links[index - number_of_links].x;
             Vector3 temp_direction = CarsPositions[RxCarID] - CarsPositions[TxCarID];
             commands[index] = new RaycastCommand(CarsPositions[TxCarID], temp_direction.normalized, temp_direction.magnitude);
         }
