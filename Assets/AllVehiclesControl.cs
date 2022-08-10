@@ -17,6 +17,14 @@ public class AllVehiclesControl : MonoBehaviour
 
     private void OnEnable()
     {
+        for (int i = 0; i < carsArray.Length; i++)
+        {
+            // get information about the number of antennas
+            int antenna_number = carsArray[i].GetComponent<AntennaConfiguration>().antennas.Count;
+            bool eadf_activation = carsArray[i].GetComponent<AntennaConfiguration>().radiationPatternActive;
+            Debug.Log(carsArray[i].name + " has " + antenna_number + " antennas; EADF is activated = " + eadf_activation);
+        }
+
         CarCoordinates = new NativeArray<Vector3>(carsArray.Length, Allocator.Persistent);
         OldCoordinates = new NativeArray<Vector3>(carsArray.Length, Allocator.Persistent);
         CarsSpeed = new NativeArray<Vector3>(carsArray.Length, Allocator.Persistent);
@@ -41,6 +49,8 @@ public class AllVehiclesControl : MonoBehaviour
             carsArray[i].SetDestination(destinations[i].position);
             // Initial positions of all vehicles
             OldCoordinates[i] = carsArray[i].transform.Find("Antenna").position;
+
+            
         }
     }
 

@@ -8,11 +8,18 @@ using UnityEditor;
 public class AntennaConfiguration : MonoBehaviour
 {
 
-    public List<GameObject> antennas = new List<GameObject>();
-    public List<TextAsset> radiation_patterns = new List<TextAsset>();
 
+    [HideInInspector]
+    public List<GameObject> antennas = new List<GameObject>();
+    [HideInInspector] 
+    public List<TextAsset> radiation_patterns = new List<TextAsset>();
+    
     bool showAntennaList = true;
 
+    public bool radiationPatternActive = false;
+
+    
+    int radiation_pattern_button_counter = 0;
 
 
 
@@ -25,20 +32,33 @@ public class AntennaConfiguration : MonoBehaviour
     {
         public override void OnInspectorGUI()
         {
-            //base.OnInspectorGUI();
+            base.OnInspectorGUI();
 
             AntennaConfiguration antennaConfiguration = (AntennaConfiguration)target;
+            EditorGUILayout.Space();
 
-            DrawLists(antennaConfiguration);
+            AntennaArrayDefinitionFunc(antennaConfiguration);
+            
 
+            
+
+            
         }
 
 
 
-        static void DrawLists(AntennaConfiguration antennaConfiguration)
+        static void AntennaArrayDefinitionFunc(AntennaConfiguration antennaConfiguration)
         {
-            EditorGUILayout.Space();
-            antennaConfiguration.showAntennaList = EditorGUILayout.Foldout(antennaConfiguration.showAntennaList, "Antenna array information", false);
+            
+            
+            GUIStyle myFoldoutStyle = new GUIStyle(EditorStyles.foldout);
+            Color myStyleColor = Color.blue;
+            myFoldoutStyle.fontStyle = FontStyle.Bold;
+            myFoldoutStyle.normal.textColor = myStyleColor;
+
+            //antennaConfiguration.showAntennaList = EditorGUILayout.Foldout(antennaConfiguration.showAntennaList, "Antenna array information", false);
+            antennaConfiguration.showAntennaList = EditorGUILayout.Foldout(antennaConfiguration.showAntennaList, "Antenna array information", false, myFoldoutStyle);
+            
 
             if (antennaConfiguration.showAntennaList)
             {
@@ -61,7 +81,56 @@ public class AntennaConfiguration : MonoBehaviour
                 for (int i = 0; i < antennaArray.Count; i++)
                 {
                     antennaArray[i] = EditorGUILayout.ObjectField("Antenna " + i, antennaArray[i], typeof(GameObject), true) as GameObject;
+
                 }
+                
+                // Add information about radiation pattern
+                EditorGUILayout.Space();
+
+                
+                if (GUILayout.Button("If radiation pattern is used"))
+                {
+                    antennaConfiguration.radiation_pattern_button_counter++;
+                    //Debug.Log(antennaConfiguration.radiation_pattern_button_counter);
+                }
+                
+                
+
+                if (antennaConfiguration.radiation_pattern_button_counter % 2 == 1)
+                {
+                    antennaConfiguration.radiationPatternActive = true;
+                    // define list of csv files
+                    List<TextAsset> eadfArray = antennaConfiguration.radiation_patterns;
+                    // correct size
+                    while (AntennaNumber > eadfArray.Count)
+                    {
+                        eadfArray.Add(null);
+                    }
+                    while (AntennaNumber < eadfArray.Count)
+                    {
+                        eadfArray.RemoveAt(eadfArray.Count - 1);
+                    }
+                    // serialize
+                    for (int i = 0; i < antennaArray.Count; i++)
+                    {
+                        eadfArray[i] = EditorGUILayout.ObjectField("EADF " + i, eadfArray[i], typeof(TextAsset), true) as TextAsset;
+                    }
+                }
+                else
+                {
+                    antennaConfiguration.radiationPatternActive = false;
+                    List<TextAsset> eadfArray = antennaConfiguration.radiation_patterns;
+                    //Debug.Log("Size eadfArray = " + eadfArray.Count);
+
+                    for (int i = 0; i < eadfArray.Count; i++)
+                    {
+                        eadfArray.RemoveAt(i);
+                    }
+                    //Debug.Log("Size eadfArray = " + eadfArray.Count);
+                }
+
+                //Debug.Log(antennaConfiguration.radiationPattern);
+
                 EditorGUI.indentLevel--;
             }
         }
