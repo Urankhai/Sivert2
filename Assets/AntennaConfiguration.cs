@@ -80,7 +80,8 @@ public class AntennaConfiguration : MonoBehaviour
                 // serialize
                 for (int i = 0; i < antennaArray.Count; i++)
                 {
-                    antennaArray[i] = EditorGUILayout.ObjectField("Antenna " + i, antennaArray[i], typeof(GameObject), true) as GameObject;
+                    int display_number = i + 1;
+                    antennaArray[i] = EditorGUILayout.ObjectField("Antenna " + display_number, antennaArray[i], typeof(GameObject), true) as GameObject;
 
                 }
                 

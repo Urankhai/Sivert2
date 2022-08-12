@@ -92,14 +92,18 @@ public partial class ChannelGenManager : MonoBehaviour
     NativeArray<SeenPath3> LookUpTableMPC3;
     NativeArray<Vector2Int> MPC3SeenID;
 
-    // Coordinates of antennas
-    NativeArray<Vector3> OldCoordinates;
+    // Coordinates of single antennas
     NativeArray<Vector3> CarCoordinates;
     NativeArray<Vector3> CarForwardVect;
-    NativeArray<Vector3> CarsSpeed;
+
+    // Coordinates of multiple antennas
+    NativeArray<int> CarsAntennaNumbers;
+    NativeArray<Vector3> CarsAntennaPositions;
+    NativeArray<Vector2Int> AntennaMatrix;
 
     // Creating nativearrays in this script that should be destroyed
     NativeArray<Vector2Int> Links;
+    NativeArray<ChannelLinks> Channel_Links;
     NativeArray<Overlap> Overlaps1;
     NativeArray<Overlap> TxOverlaps2;
     NativeArray<Overlap> RxOverlaps2;
@@ -107,6 +111,7 @@ public partial class ChannelGenManager : MonoBehaviour
     NativeArray<Overlap> RxOverlaps3;
     int link_num;
     int car_num;
+    int channel_link_num;
 
     //LoS
     NativeArray<RaycastCommand> commandsLoS;
@@ -217,6 +222,7 @@ public partial class ChannelGenManager : MonoBehaviour
     {
         Pattern.Dispose();
         Links.Dispose();
+        Channel_Links.Dispose();
         Overlaps1.Dispose();
         TxOverlaps2.Dispose();
         RxOverlaps2.Dispose();
@@ -364,14 +370,49 @@ public partial class ChannelGenManager : MonoBehaviour
         MPC3SeenID = LUT_Script.MPC3SeenID;
         #endregion
 
-        #region Positions
+        #region Positions and calculate number of channel links
+
         // Coordinates of antennas
         GameObject VehiclesData = GameObject.Find("MovementManager");
         AllVehiclesControl ControlScript= VehiclesData.GetComponent<AllVehiclesControl>();
-        OldCoordinates = ControlScript.OldCoordinates;
         CarCoordinates = ControlScript.CarCoordinates;
         CarForwardVect = ControlScript.CarForwardVect;
-        CarsSpeed = ControlScript.CarsSpeed;
+
+        // Coordinates of multiple antennas
+        CarsAntennaNumbers = ControlScript.CarsAntennaNumbers;
+        CarsAntennaPositions = ControlScript.CarsAntennaPositions;
+        AntennaMatrix = ControlScript.AntennaMatrix;
+
+        channel_link_num = 0;
+        for (int i = 0; i < CarsAntennaNumbers.Length; i++)
+        {
+            int temp_sum = 0;
+            for (int j = i+1; j < CarsAntennaNumbers.Length; j++)
+            {
+                temp_sum += CarsAntennaNumbers[j];
+            }
+            channel_link_num += CarsAntennaNumbers[i] * temp_sum;
+        }
+
+        Channel_Links = new NativeArray<ChannelLinks>(channel_link_num, Allocator.Persistent);
+
+        int channel_link_count = 0;
+        for (int car1 = 0; car1 < CarsAntennaNumbers.Length; car1++)
+        {
+            int car1_ant_num = CarsAntennaNumbers[car1];
+            for (int car2 = car1 + 1; car2 < CarsAntennaNumbers.Length; car2++)
+            {
+                int car2_ant_num = CarsAntennaNumbers[car2];
+                for (int ant1 = 0; ant1 < car1_ant_num; ant1++)
+                {
+                    for (int ant2 = 0; ant2 < car2_ant_num; ant2++)
+                    {
+                        Channel_Links[channel_link_count] = new ChannelLinks(car1, car2, ant1, ant2);
+                        channel_link_count += 1;
+                    }
+                }
+            }
+        }
         #endregion
 
         #endregion
@@ -391,29 +432,7 @@ public partial class ChannelGenManager : MonoBehaviour
         commandsLoS = new NativeArray<RaycastCommand>(2*link_num, Allocator.Persistent);
         resultsLoS = new NativeArray<RaycastHit>(2*link_num, Allocator.Persistent);
         
-        /*
-        // DMC
-        SoA0 = new NativeArray<float>(DMC_num * car_num, Allocator.Persistent);
-        Seen0 = new NativeArray<int>(DMC_num * car_num, Allocator.Persistent);
-        commands0 = new NativeArray<RaycastCommand>(DMC_num * car_num, Allocator.Persistent);
-        results0 = new NativeArray<RaycastHit>(DMC_num * car_num, Allocator.Persistent);
-        // MPC1
-        SoA1 = new NativeArray<float>(MPC1_num * car_num, Allocator.Persistent);
-        Seen1 = new NativeArray<int>(MPC1_num * car_num, Allocator.Persistent);
-        commands1 = new NativeArray<RaycastCommand>(MPC1_num * car_num, Allocator.Persistent);
-        results1 = new NativeArray<RaycastHit>(MPC1_num * car_num, Allocator.Persistent);
-        // MPC2
-        SoA2 = new NativeArray<float>(MPC2_num * car_num, Allocator.Persistent);
-        Seen2 = new NativeArray<int>(MPC2_num * car_num, Allocator.Persistent);
-        commands2 = new NativeArray<RaycastCommand>(MPC2_num * car_num, Allocator.Persistent);
-        results2 = new NativeArray<RaycastHit>(MPC2_num * car_num, Allocator.Persistent);
-        // MPC3
-        SoA3 = new NativeArray<float>(MPC3_num * car_num, Allocator.Persistent);
-        Seen3 = new NativeArray<int>(MPC3_num * car_num, Allocator.Persistent);
-        commands3 = new NativeArray<RaycastCommand>(MPC3_num * car_num, Allocator.Persistent);
-        results3 = new NativeArray<RaycastHit>(MPC3_num * car_num, Allocator.Persistent);
-        */
-
+        
         // MPCs
         SoA = new NativeArray<float>( (DMC_num + MPC1_num + MPC2_num + MPC3_num) * car_num, Allocator.Persistent);
         Seen = new NativeArray<int>((DMC_num + MPC1_num + MPC2_num + MPC3_num) * car_num, Allocator.Persistent);
@@ -446,8 +465,17 @@ public partial class ChannelGenManager : MonoBehaviour
     //void Update()
     {
         FrameCounter++;
-        
-        
+        /*
+        int temp_ant_counter = 0;
+        for (int i = 0; i < CarsAntennaPositions.Length; i++)
+        {
+            Vector3 dant_coord = CarsAntennaPositions[i];
+            carsArray
+            if (i < CarsAntennaNumbers)
+            int car_id = 
+            Debug.Log()
+        }
+        */
 
         if (Mathf.Abs(-18.0f - CarCoordinates[1].z) < 1.0f)
         {
@@ -1062,6 +1090,21 @@ public struct ParallelChannel : IJobParallelFor
             }
         }
         H_NLoS[index] = temp_HNLoS;        
+    }
+}
+
+public struct ChannelLinks
+{
+    public int Car1;
+    public int Car2;
+    public int V1Antenna;
+    public int V2Antenna;
+    public ChannelLinks(int car1, int car2, int ant1, int ant2)
+    {
+        Car1 = car1;
+        Car2 = car2;
+        V1Antenna = ant1;
+        V2Antenna = ant2;
     }
 }
 
