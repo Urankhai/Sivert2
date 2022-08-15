@@ -611,7 +611,6 @@ public partial class ChannelGenManager : MonoBehaviour
             raycastresults = resultsLoS,
             inverseLambdas = InverseWavelengths,
             Pattern = Pattern,
-            Corners = CornersNormalsPerpendiculars,
 
             HLoS = H_LoS,
         };

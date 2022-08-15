@@ -16,7 +16,6 @@ public struct ParallelLoSChannel : IJobParallelFor
     [ReadOnly] public NativeArray<float> inverseLambdas;
     [ReadOnly] public NativeArray<Vector2> Pattern;
 
-    [ReadOnly] public NativeArray<Vector3> Corners; // [coord, norm, perp][coord, norm, perp]...[coord, norm, perp] given number of corners
 
     [WriteOnly] public NativeArray<System.Numerics.Complex> HLoS;
     
