@@ -123,25 +123,11 @@ public partial class ChannelGenManager : MonoBehaviour
     NativeArray<RaycastCommand> commandsLoS;
     NativeArray<RaycastHit> resultsLoS;
     NativeArray<Vector3> CornersNormalsPerpendiculars;
-    //DMC
-    /*
-    NativeArray<float> SoA0;
-    NativeArray<int> Seen0; // either 0 or 1
-    NativeArray<RaycastCommand> commands0; // for DMCs
-    NativeArray<RaycastHit> results0; // for DMCs
-    NativeArray<float> SoA1;
-    NativeArray<int> Seen1; // either 0 or 1
-    NativeArray<RaycastCommand> commands1;  // for MPC1s
-    NativeArray<RaycastHit> results1;  // for MPC1s
-    NativeArray<float> SoA2;
-    NativeArray<int> Seen2; // either 0 or 1
-    NativeArray<RaycastCommand> commands2;  // for MPC2s
-    NativeArray<RaycastHit> results2;  // for MPC2s
-    NativeArray<float> SoA3;
-    NativeArray<int> Seen3; // either 0 or 1
-    NativeArray<RaycastCommand> commands3;  // for MPC3s
-    NativeArray<RaycastHit> results3;  // for MPC3s
-    */
+
+    // Multi Antenna (MA)
+    // MA LoS
+    NativeArray<RaycastCommand> MA_commandsLoS;
+    NativeArray<RaycastHit> MA_resultsLoS;
 
     NativeArray<float> SoA;
     NativeArray<int> Seen; // either 0 or 1
@@ -156,11 +142,10 @@ public partial class ChannelGenManager : MonoBehaviour
     NativeArray<float> Subcarriers;
     NativeArray<float> InverseWavelengths;
     NativeArray<System.Numerics.Complex> H_LoS;
-    //NativeArray<System.Numerics.Complex> H0;
-    //NativeArray<System.Numerics.Complex> H1;
-    //NativeArray<System.Numerics.Complex> H2;
-    //NativeArray<System.Numerics.Complex> H3;
     NativeArray<System.Numerics.Complex> H_NLoS;
+
+    NativeArray<System.Numerics.Complex> MA_H_LoS;
+    NativeArray<System.Numerics.Complex> MA_H_NLoS;
 
     public float SubframePower;
     private void OnEnable()
@@ -218,27 +203,10 @@ public partial class ChannelGenManager : MonoBehaviour
 
         commandsLoS.Dispose();
         resultsLoS.Dispose();
-        /*
-        SoA0.Dispose();
-        Seen0.Dispose();
-        commands0.Dispose();
-        results0.Dispose();
 
-        SoA1.Dispose();
-        Seen1.Dispose();
-        commands1.Dispose();
-        results1.Dispose();
-
-        SoA2.Dispose();
-        Seen2.Dispose();
-        commands2.Dispose();
-        results2.Dispose();
-
-        SoA3.Dispose();
-        Seen3.Dispose();
-        commands3.Dispose();
-        results3.Dispose();
-        */
+        MA_commandsLoS.Dispose();
+        MA_resultsLoS.Dispose();
+        
         SoA.Dispose();
         Seen.Dispose();
         commands.Dispose();
@@ -247,56 +215,12 @@ public partial class ChannelGenManager : MonoBehaviour
         Subcarriers.Dispose();
         InverseWavelengths.Dispose();
         H_LoS.Dispose();
-        /*
-        H0.Dispose();
-        H1.Dispose();
-        H2.Dispose();
-        H3.Dispose();
-        */
         H_NLoS.Dispose();
+
+        MA_H_LoS.Dispose();
+        MA_H_NLoS.Dispose();
     }
 
-    /*
-    private void OnDisable()
-    {
-        string path = @"C:\Users\Administrator\Desktop\Aleksei\Parallel3DChaSi\GSCM1_InTimeDomain\Assets\";
-        string path1 = path + "h_time1.csv";//Application.persistentDataPath + "/h_time1.csv";
-
-        using (var file = File.CreateText(path1))
-        {
-            foreach (var arr in h_save)
-            {
-                //if (String.IsNullOrEmpty(arr)) continue;
-                file.Write(arr[0]);
-                for (int i = 1; i < arr.Count; i++)
-                {
-                    file.Write(',');
-                    file.Write(arr[i]);
-                }
-                file.WriteLine();
-            }
-        }
-
-        string path2 = path + filename;// Application.persistentDataPath + "/H_freq1.csv";
-
-        using (var file = File.CreateText(path2))
-        {
-            foreach (var arr in H_save)
-            {
-                //if (String.IsNullOrEmpty(arr)) continue;
-                file.Write(arr[0]);
-                for (int i = 1; i < arr.Count; i++)
-                {
-                    file.Write(',');
-                    file.Write(arr[i]);
-                }
-                file.WriteLine();
-            }
-        }
-
-        Debug.Log("The lenght of the list<list> structure " + h_save.Count);
-    }
-    */
 
     void Start()
     {
@@ -373,6 +297,11 @@ public partial class ChannelGenManager : MonoBehaviour
         Channel_Links = ControlScript.Channel_Links;
         Channel_Links_Coordinates = ControlScript.Channel_Links_Coordinates;
 
+
+        // MA LoS
+        MA_commandsLoS = new NativeArray<RaycastCommand>(Channel_Links.Length, Allocator.Persistent);
+        MA_resultsLoS = new NativeArray<RaycastHit>(Channel_Links.Length, Allocator.Persistent);
+
         #endregion
 
         #endregion
@@ -391,7 +320,7 @@ public partial class ChannelGenManager : MonoBehaviour
         // LoS
         commandsLoS = new NativeArray<RaycastCommand>(2*link_num, Allocator.Persistent);
         resultsLoS = new NativeArray<RaycastHit>(2*link_num, Allocator.Persistent);
-        
+
         
         // MPCs
         SoA = new NativeArray<float>( (DMC_num + MPC1_num + MPC2_num + MPC3_num) * car_num, Allocator.Persistent);
@@ -411,12 +340,10 @@ public partial class ChannelGenManager : MonoBehaviour
 
         // Channels for all links
         H_LoS = new NativeArray<System.Numerics.Complex>(FFTNum * link_num, Allocator.Persistent);
-        //H0 = new NativeArray<System.Numerics.Complex>(FFTNum * link_num, Allocator.Persistent);
-        //H1 = new NativeArray<System.Numerics.Complex>(FFTNum * link_num, Allocator.Persistent);
-        //H2 = new NativeArray<System.Numerics.Complex>(FFTNum * link_num, Allocator.Persistent);
-        //H3 = new NativeArray<System.Numerics.Complex>(FFTNum * link_num, Allocator.Persistent);
         H_NLoS = new NativeArray<System.Numerics.Complex>(FFTNum * link_num, Allocator.Persistent);
 
+        MA_H_LoS = new NativeArray<System.Numerics.Complex>(FFTNum * Channel_Links.Length, Allocator.Persistent);
+        MA_H_NLoS = new NativeArray<System.Numerics.Complex>(FFTNum * Channel_Links.Length, Allocator.Persistent);
 
         //EdgeEffectCoeff = 10.0f;
     }
@@ -535,7 +462,7 @@ public partial class ChannelGenManager : MonoBehaviour
         }
         #endregion
 
-
+        /*
         for (int i = 0; i < CarsAntennaPositions.Length; i++)
         {
             Vector3 antenna_coordinates = CarsAntennaPositions[i];
@@ -557,9 +484,43 @@ public partial class ChannelGenManager : MonoBehaviour
 
             Debug.Log("Cars control: car[" + car1 + "], ant[" + ant1 + "] position " + ant1_position + "; car[" + car2 + "], ant[" + ant2 + "] position " + ant2_position);
         }
-
+        */
 
         #region LoS Channel Calculation
+        float t_MA_LoS = Time.realtimeSinceStartup;
+        
+        MA_ParallelLoSDetection MA_LoSDetection = new MA_ParallelLoSDetection
+        {
+            AntennaPositions = Channel_Links_Coordinates,
+            RayCastcommands = MA_commandsLoS,
+        };
+        JobHandle MA_LoSDetectionHandle = MA_LoSDetection.Schedule(Channel_Links_Coordinates.Length, 1);
+        MA_LoSDetectionHandle.Complete();
+        // parallel raycasting
+        JobHandle MA_rayCastJobLoS = RaycastCommand.ScheduleBatch(MA_commandsLoS, MA_resultsLoS, 1, default);
+        MA_rayCastJobLoS.Complete();
+
+        MA_ParallelLoSChannel MA_LoSChannel = new MA_ParallelLoSChannel
+        {
+            OmniAntennaFlag = OmniAntenna,
+            FFTSize = FFTNum,
+            AntennasPositions = Channel_Links_Coordinates,
+            CarsFwd = CarForwardVect,
+            Channel_Links = Channel_Links,
+            MA_raycastresults = MA_resultsLoS,
+            inverseLambdas = InverseWavelengths,
+            Pattern = Pattern,
+
+            HLoS = MA_H_LoS,
+        };
+        JobHandle MA_LoSChannelHandle = MA_LoSChannel.Schedule(MA_H_LoS.Length, 64);
+        MA_LoSChannelHandle.Complete();
+
+        Debug.Log("Time spent for MA LoS Detection: " + ((Time.realtimeSinceStartup - t_MA_LoS) * 1000f) + " ms");
+
+
+        float t_LoS = Time.realtimeSinceStartup;
+
         ParallelLoSDetection LoSDetection = new ParallelLoSDetection
         {
             CarsPositions = CarCoordinates,
@@ -571,8 +532,6 @@ public partial class ChannelGenManager : MonoBehaviour
         // parallel raycasting
         JobHandle rayCastJobLoS = RaycastCommand.ScheduleBatch(commandsLoS, resultsLoS, 1, default);
         rayCastJobLoS.Complete();
-
-        
 
         ParallelLoSChannel LoSChannel = new ParallelLoSChannel
         {
@@ -589,13 +548,29 @@ public partial class ChannelGenManager : MonoBehaviour
         };
         JobHandle LoSChannelHandle = LoSChannel.Schedule(H_LoS.Length, 64);
         LoSChannelHandle.Complete();
+
+        Debug.Log("Time spent for LoS Detection: " + ((Time.realtimeSinceStartup - t_LoS) * 1000f) + " ms");
+
+
+
+        /*
+        float ant_distance = resultsLoS[0].distance;
+        if (ant_distance == 0)
+        {
+            Debug.Log("H[0] = " + H_LoS[0]);
+            Debug.Log("Distance between antennas = " + ant_distance);
+        }
+        else
+        {
+            Debug.Log("H[0] = " + H_LoS[0]);
+        }
+        */
         #endregion
 
-        
 
 
 
-        float t_all = Time.realtimeSinceStartup;
+
 
         ParallelRayCastingDataCars RayCastingData = new ParallelRayCastingDataCars
         {
@@ -719,7 +694,7 @@ public partial class ChannelGenManager : MonoBehaviour
         //jobHandlelinkIndexes.Complete();
         //Debug.Log("Time spent for filtering: " + ((Time.realtimeSinceStartup - t_filt) * 1000f) + " ms");
 
-        //float t_chan = Time.realtimeSinceStartup;
+        
         ParallelChannel parallelChannel = new ParallelChannel
         {
             FFTSize = FFTNum,
@@ -736,6 +711,7 @@ public partial class ChannelGenManager : MonoBehaviour
         };
         JobHandle parallelChannelJob = parallelChannel.Schedule(FFTNum * link_num, 1, jobHandlelinkIndexes);
         parallelChannelJob.Complete();
+        //float t_chan = Time.realtimeSinceStartup;
         //Debug.Log("Time spent for channel calculation: " + ((Time.realtimeSinceStartup - t_chan) * 1000f) + " ms");
 
         //Debug.Log("Time spent for Raycasting all at once: " + ((Time.realtimeSinceStartup - t_all) * 1000f) + " ms");
