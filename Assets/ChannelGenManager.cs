@@ -102,9 +102,14 @@ public partial class ChannelGenManager : MonoBehaviour
     NativeArray<Vector3> CarsAntennaPositions;
     NativeArray<Vector2Int> AntennaMatrix;
 
+    NativeArray<ChannelLinks> Channel_Links;
+    NativeArray<ChannelLinksCoordinates> Channel_Links_Coordinates;
+
     // Creating nativearrays in this script that should be destroyed
     NativeArray<Vector2Int> Links;
-    NativeArray<ChannelLinks> Channel_Links;
+    
+    
+    
     NativeArray<Overlap> Overlaps1;
     NativeArray<Overlap> TxOverlaps2;
     NativeArray<Overlap> RxOverlaps2;
@@ -112,7 +117,7 @@ public partial class ChannelGenManager : MonoBehaviour
     NativeArray<Overlap> RxOverlaps3;
     int link_num;
     int car_num;
-    int channel_link_num;
+    
 
     //LoS
     NativeArray<RaycastCommand> commandsLoS;
@@ -197,33 +202,14 @@ public partial class ChannelGenManager : MonoBehaviour
             Pattern[i] = new Vector2(listA[i], listB[i]);
         }
 
-        //Pattern[0] = new Vector2(0.0068f, -0.0004f);
-        //Pattern[1] = new Vector2(-0.0024f, 0.0024f);
-        //Pattern[2] = new Vector2(-0.0751f, 0.0071f);
-        //Pattern[3] = new Vector2(0.0051f, -0.0603f);
-
-        //Pattern[4] = new Vector2(0.2522f, 0.0103f);
-        //Pattern[5] = new Vector2(-0.0464f, 0.3858f);
-        //Pattern[6] = new Vector2(-0.8632f, -0.0495f);
-        //Pattern[7] = new Vector2(0.0175f, -1.2042f);
-
-        //Pattern[8] = new Vector2(1.6836f, 0.0000f);
-        //Pattern[9] = new Vector2(0.0175f, 1.2042f);
-        //Pattern[10] = new Vector2(-0.8632f, 0.0495f);
-        //Pattern[11] = new Vector2(-0.0464f, 0.3858f);
-
-        //Pattern[12] = new Vector2(0.2522f, -0.0103f);
-        //Pattern[13] = new Vector2(0.0051f, 0.0603f);
-        //Pattern[14] = new Vector2(-0.0751f, 0.0071f);
-        //Pattern[15] = new Vector2(-0.0024f, -0.0024f);
-        //Pattern[16] = new Vector2(0.0068f, 0.0004f);
     }
 
     private void OnDestroy()
     {
         Pattern.Dispose();
         Links.Dispose();
-        Channel_Links.Dispose();
+        
+        
         Overlaps1.Dispose();
         TxOverlaps2.Dispose();
         RxOverlaps2.Dispose();
@@ -378,42 +364,15 @@ public partial class ChannelGenManager : MonoBehaviour
         AllVehiclesControl ControlScript= VehiclesData.GetComponent<AllVehiclesControl>();
         CarCoordinates = ControlScript.CarCoordinates;
         CarForwardVect = ControlScript.CarForwardVect;
+        
 
         // Coordinates of multiple antennas
         CarsAntennaNumbers = ControlScript.CarsAntennaNumbers;
         CarsAntennaPositions = ControlScript.CarsAntennaPositions;
         AntennaMatrix = ControlScript.AntennaMatrix;
+        Channel_Links = ControlScript.Channel_Links;
+        Channel_Links_Coordinates = ControlScript.Channel_Links_Coordinates;
 
-        channel_link_num = 0;
-        for (int i = 0; i < CarsAntennaNumbers.Length; i++)
-        {
-            int temp_sum = 0;
-            for (int j = i+1; j < CarsAntennaNumbers.Length; j++)
-            {
-                temp_sum += CarsAntennaNumbers[j];
-            }
-            channel_link_num += CarsAntennaNumbers[i] * temp_sum;
-        }
-
-        Channel_Links = new NativeArray<ChannelLinks>(channel_link_num, Allocator.Persistent);
-
-        int channel_link_count = 0;
-        for (int car1 = 0; car1 < CarsAntennaNumbers.Length; car1++)
-        {
-            int car1_ant_num = CarsAntennaNumbers[car1];
-            for (int car2 = car1 + 1; car2 < CarsAntennaNumbers.Length; car2++)
-            {
-                int car2_ant_num = CarsAntennaNumbers[car2];
-                for (int ant1 = 0; ant1 < car1_ant_num; ant1++)
-                {
-                    for (int ant2 = 0; ant2 < car2_ant_num; ant2++)
-                    {
-                        Channel_Links[channel_link_count] = new ChannelLinks(car1, car2, ant1, ant2);
-                        channel_link_count += 1;
-                    }
-                }
-            }
-        }
         #endregion
 
         #endregion
@@ -583,6 +542,20 @@ public partial class ChannelGenManager : MonoBehaviour
             int car_id = AntennaMatrix[i].x;
             int ant_id = AntennaMatrix[i].y;
             Debug.Log("Car[" + car_id + "]: coordinates of ant[" + ant_id + "] = " + antenna_coordinates);
+        }
+
+        for (int i = 0; i < Channel_Links_Coordinates.Length; i++)
+        {
+            int car1 = Channel_Links[i].Car1;
+            int ant1 = Channel_Links[i].V1Antenna;
+
+            int car2 = Channel_Links[i].Car2;
+            int ant2 = Channel_Links[i].V2Antenna;
+
+            Vector3 ant1_position = Channel_Links_Coordinates[i].Ant1Coordinates;
+            Vector3 ant2_position = Channel_Links_Coordinates[i].Ant2Coordinates;
+
+            Debug.Log("Cars control: car[" + car1 + "], ant[" + ant1 + "] position " + ant1_position + "; car[" + car2 + "], ant[" + ant2 + "] position " + ant2_position);
         }
 
 
@@ -952,6 +925,18 @@ public struct ChannelLinks
         Car2 = car2;
         V1Antenna = ant1;
         V2Antenna = ant2;
+    }
+}
+
+public struct ChannelLinksCoordinates
+{
+    public Vector3 Ant1Coordinates;
+    public Vector3 Ant2Coordinates;
+    
+    public ChannelLinksCoordinates(Vector3 coord1, Vector3 coord2)
+    {
+        Ant1Coordinates = coord1;
+        Ant2Coordinates = coord2;
     }
 }
 

@@ -17,7 +17,11 @@ public class AllVehiclesControl : MonoBehaviour
     [HideInInspector] public NativeArray<int> CarsAntennaNumbers;
     [HideInInspector] public NativeArray<Vector3> CarsAntennaPositions;
     [HideInInspector] public NativeArray<Vector2Int> AntennaMatrix;
+    [HideInInspector] public NativeArray<ChannelLinks> Channel_Links;
+    [HideInInspector] public NativeArray<ChannelLinksCoordinates> Channel_Links_Coordinates;
 
+    int channel_link_num;
+    
     private void OnEnable()
     {
 
@@ -57,6 +61,38 @@ public class AllVehiclesControl : MonoBehaviour
         }
 
 
+        channel_link_num = 0;
+        for (int i = 0; i < CarsAntennaNumbers.Length; i++)
+        {
+            int temp_sum = 0;
+            for (int j = i + 1; j < CarsAntennaNumbers.Length; j++)
+            {
+                temp_sum += CarsAntennaNumbers[j];
+            }
+            channel_link_num += CarsAntennaNumbers[i] * temp_sum;
+        }
+
+        Channel_Links = new NativeArray<ChannelLinks>(channel_link_num, Allocator.Persistent);
+        Channel_Links_Coordinates = new NativeArray<ChannelLinksCoordinates>(channel_link_num, Allocator.Persistent);
+
+        int channel_link_count = 0;
+        for (int car1 = 0; car1 < CarsAntennaNumbers.Length; car1++)
+        {
+            int car1_ant_num = CarsAntennaNumbers[car1];
+            for (int car2 = car1 + 1; car2 < CarsAntennaNumbers.Length; car2++)
+            {
+                int car2_ant_num = CarsAntennaNumbers[car2];
+                for (int ant1 = 0; ant1 < car1_ant_num; ant1++)
+                {
+                    for (int ant2 = 0; ant2 < car2_ant_num; ant2++)
+                    {
+                        Channel_Links[channel_link_count] = new ChannelLinks(car1, car2, ant1, ant2);
+                        channel_link_count += 1;
+                    }
+                }
+            }
+        }
+
     }
     private void OnDestroy()
     {
@@ -67,6 +103,10 @@ public class AllVehiclesControl : MonoBehaviour
         CarsAntennaNumbers.Dispose();
         CarsAntennaPositions.Dispose();
         AntennaMatrix.Dispose();
+
+
+        Channel_Links.Dispose();
+        Channel_Links_Coordinates.Dispose();
     }
     
     
@@ -132,6 +172,22 @@ public class AllVehiclesControl : MonoBehaviour
                 }
             }
             counted_antenna = CarsAntennaNumbers[i];
+        }
+
+        for (int i = 0; i < Channel_Links.Length; i++)
+        {
+            int car1 = Channel_Links[i].Car1;
+            int ant1 = Channel_Links[i].V1Antenna;
+
+            int car2 = Channel_Links[i].Car2;
+            int ant2 = Channel_Links[i].V2Antenna;
+
+            Vector3 ant1_position = carsArray[car1].GetComponent<AntennaConfiguration>().antennas[ant1].transform.position;
+            Vector3 ant2_position = carsArray[car2].GetComponent<AntennaConfiguration>().antennas[ant2].transform.position;
+
+            Channel_Links_Coordinates[i] = new ChannelLinksCoordinates(ant1_position, ant2_position);
+
+            //Debug.Log("Cars control: car[" + car1 + "], ant[" + ant1 + "] position " + ant1_position + "; car[" + car2 + "], ant[" + ant2 + "] position " + ant2_position);
         }
 
     }

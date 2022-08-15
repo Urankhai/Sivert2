@@ -3399,8 +3399,8 @@ MonoBehaviour:
   PowerInMilliWatts: 100
   SpeedofLight: 299792450
   CarrierFrequency: 5.2e+9
-  fsubcarriers: 1000000
-  OmniAntenna: 1
+  fsubcarriers: 156250
+  OmniAntenna: 0
   filename: H_freq4002.csv
   tfTime: {fileID: 1144777040}
   tfFreq: {fileID: 956427315}
@@ -3578,8 +3578,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   antennas:
   - {fileID: 1533634962}
-  - {fileID: 618531407}
-  - {fileID: 618531407}
   - {fileID: 618531407}
   radiation_patterns: []
   radiationPatternActive: 0
