@@ -487,7 +487,7 @@ public partial class ChannelGenManager : MonoBehaviour
         */
 
         #region LoS Channel Calculation
-        float t_MA_LoS = Time.realtimeSinceStartup;
+        //float t_MA_LoS = Time.realtimeSinceStartup;
         
         MA_ParallelLoSDetection MA_LoSDetection = new MA_ParallelLoSDetection
         {
@@ -516,10 +516,10 @@ public partial class ChannelGenManager : MonoBehaviour
         JobHandle MA_LoSChannelHandle = MA_LoSChannel.Schedule(MA_H_LoS.Length, 64);
         MA_LoSChannelHandle.Complete();
 
-        Debug.Log("Time spent for MA LoS Detection: " + ((Time.realtimeSinceStartup - t_MA_LoS) * 1000f) + " ms");
+        //Debug.Log("Time spent for MA LoS Detection: " + ((Time.realtimeSinceStartup - t_MA_LoS) * 1000f) + " ms");
 
 
-        float t_LoS = Time.realtimeSinceStartup;
+        //float t_LoS = Time.realtimeSinceStartup;
 
         ParallelLoSDetection LoSDetection = new ParallelLoSDetection
         {
@@ -549,9 +549,11 @@ public partial class ChannelGenManager : MonoBehaviour
         JobHandle LoSChannelHandle = LoSChannel.Schedule(H_LoS.Length, 64);
         LoSChannelHandle.Complete();
 
-        Debug.Log("Time spent for LoS Detection: " + ((Time.realtimeSinceStartup - t_LoS) * 1000f) + " ms");
+        //Debug.Log("Time spent for LoS Detection: " + ((Time.realtimeSinceStartup - t_LoS) * 1000f) + " ms");
 
-
+        int subcarier_position = 10;
+        double diff_H = (H_LoS[subcarier_position].Real - MA_H_LoS[subcarier_position].Real) + (H_LoS[subcarier_position].Imaginary - MA_H_LoS[subcarier_position].Imaginary);
+        Debug.Log("Channel difference = " + diff_H);
 
         /*
         float ant_distance = resultsLoS[0].distance;

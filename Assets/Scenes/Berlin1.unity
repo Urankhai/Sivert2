@@ -3400,7 +3400,7 @@ MonoBehaviour:
   SpeedofLight: 299792450
   CarrierFrequency: 5.2e+9
   fsubcarriers: 156250
-  OmniAntenna: 0
+  OmniAntenna: 1
   filename: H_freq4002.csv
   tfTime: {fileID: 1144777040}
   tfFreq: {fileID: 956427315}
