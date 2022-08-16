@@ -134,6 +134,12 @@ public partial class ChannelGenManager : MonoBehaviour
     NativeArray<RaycastCommand> commands; // for DMCs
     NativeArray<RaycastHit> results; // for DMCs
 
+    // Multi antenna case
+    NativeArray<float> MA_SoA;
+    NativeArray<int> MA_Seen; // either 0 or 1
+    NativeArray<RaycastCommand> MA_commands; // for DMCs
+    NativeArray<RaycastHit> MA_results; // for DMCs
+
     static readonly int FFTNum = 64;
     public System.Numerics.Complex[] H = new System.Numerics.Complex[FFTNum]; // Half of LTE BandWidth, instead of 2048 subcarriers
 
@@ -207,10 +213,17 @@ public partial class ChannelGenManager : MonoBehaviour
         MA_commandsLoS.Dispose();
         MA_resultsLoS.Dispose();
         
+        // Single antenna case
         SoA.Dispose();
         Seen.Dispose();
         commands.Dispose();
         results.Dispose();
+
+        // Multiple antenna case
+        MA_SoA.Dispose();
+        MA_Seen.Dispose();
+        MA_commands.Dispose();
+        MA_results.Dispose();
 
         Subcarriers.Dispose();
         InverseWavelengths.Dispose();
@@ -328,6 +341,13 @@ public partial class ChannelGenManager : MonoBehaviour
         commands = new NativeArray<RaycastCommand>((DMC_num + MPC1_num + MPC2_num + MPC3_num) * car_num, Allocator.Persistent);
         results = new NativeArray<RaycastHit>((DMC_num + MPC1_num + MPC2_num + MPC3_num) * car_num, Allocator.Persistent);
 
+        // MPCs processing for the MA case
+        
+        MA_SoA = new NativeArray<float>((DMC_num + MPC1_num + MPC2_num + MPC3_num) * CarsAntennaPositions.Length, Allocator.Persistent);
+        MA_Seen = new NativeArray<int>((DMC_num + MPC1_num + MPC2_num + MPC3_num) * CarsAntennaPositions.Length, Allocator.Persistent);
+        MA_commands = new NativeArray<RaycastCommand>((DMC_num + MPC1_num + MPC2_num + MPC3_num) * CarsAntennaPositions.Length, Allocator.Persistent);
+        MA_results = new NativeArray<RaycastHit>((DMC_num + MPC1_num + MPC2_num + MPC3_num) * CarsAntennaPositions.Length, Allocator.Persistent);
+
         int link_count = 0;
         for (int i = 0; i < car_num; i++)
         {
@@ -352,17 +372,6 @@ public partial class ChannelGenManager : MonoBehaviour
     //void Update()
     {
         FrameCounter++;
-        /*
-        int temp_ant_counter = 0;
-        for (int i = 0; i < CarsAntennaPositions.Length; i++)
-        {
-            Vector3 dant_coord = CarsAntennaPositions[i];
-            carsArray
-            if (i < CarsAntennaNumbers)
-            int car_id = 
-            Debug.Log()
-        }
-        */
 
         if (Mathf.Abs(-18.0f - CarCoordinates[1].z) < 1.0f)
         {
@@ -462,6 +471,9 @@ public partial class ChannelGenManager : MonoBehaviour
         }
         #endregion
 
+
+
+        #region LoS Channel Calculation
         /*
         for (int i = 0; i < CarsAntennaPositions.Length; i++)
         {
@@ -486,9 +498,6 @@ public partial class ChannelGenManager : MonoBehaviour
         }
         */
 
-        #region LoS Channel Calculation
-        //float t_MA_LoS = Time.realtimeSinceStartup;
-        
         MA_ParallelLoSDetection MA_LoSDetection = new MA_ParallelLoSDetection
         {
             AntennaPositions = Channel_Links_Coordinates,
@@ -516,10 +525,10 @@ public partial class ChannelGenManager : MonoBehaviour
         JobHandle MA_LoSChannelHandle = MA_LoSChannel.Schedule(MA_H_LoS.Length, 64);
         MA_LoSChannelHandle.Complete();
 
-        //Debug.Log("Time spent for MA LoS Detection: " + ((Time.realtimeSinceStartup - t_MA_LoS) * 1000f) + " ms");
+        
 
 
-        //float t_LoS = Time.realtimeSinceStartup;
+        
 
         ParallelLoSDetection LoSDetection = new ParallelLoSDetection
         {
@@ -549,14 +558,14 @@ public partial class ChannelGenManager : MonoBehaviour
         JobHandle LoSChannelHandle = LoSChannel.Schedule(H_LoS.Length, 64);
         LoSChannelHandle.Complete();
 
-        //Debug.Log("Time spent for LoS Detection: " + ((Time.realtimeSinceStartup - t_LoS) * 1000f) + " ms");
 
+        /*
         int subcarier_position = 10;
         double SA_H = H_LoS[subcarier_position].Real + H_LoS[subcarier_position].Imaginary;
         double MA_H = MA_H_LoS[subcarier_position].Real + MA_H_LoS[subcarier_position].Imaginary;
         double diff_H = (H_LoS[subcarier_position].Real - MA_H_LoS[subcarier_position + 0*FFTNum].Real) + (H_LoS[subcarier_position].Imaginary - MA_H_LoS[subcarier_position + 0*FFTNum].Imaginary);
-        Debug.Log("Single Antenna SA_H = " + SA_H + "Multiple Antenna MA_H = " + MA_H + "; Channel difference = " + diff_H);
-
+        Debug.Log("Single Antenna SA_H = " + SA_H + "; Multiple Antenna MA_H = " + MA_H + "; Channel difference = " + diff_H);
+        */
         /*
         float ant_distance = resultsLoS[0].distance;
         if (ant_distance == 0)
@@ -572,9 +581,34 @@ public partial class ChannelGenManager : MonoBehaviour
         #endregion
 
 
+        #region MPC raycasting procedure (The duration is about: MA ~ 1.5 ms, SA ~ 0.7 ms)
+        // Multiple antenna case
 
+        //float t_MA_NLoS = Time.realtimeSinceStartup;
 
+        ParallelRayCastingDataAntennas MA_RayCastingData = new ParallelRayCastingDataAntennas
+        {
+            CastingDistance = maxdistance,
+            Antennas_Positions = CarsAntennaPositions,
+            MPC_Array = MPC_Native,
+            MPC_Perpendiculars = MPC_perp,
 
+            MA_SoA = MA_SoA,
+            MA_SeenIndicator = MA_Seen,
+            MA_commands = MA_commands,
+        };
+        JobHandle MA_jobHandle_RayCastingData = MA_RayCastingData.Schedule(MPC_num * CarsAntennaPositions.Length, 32);
+        //jobHandle_RayCastingData0.Complete();
+
+        // parallel raycasting
+        JobHandle MA_rayCastJob = RaycastCommand.ScheduleBatch(MA_commands, MA_results, 32, MA_jobHandle_RayCastingData);
+        MA_rayCastJob.Complete();
+        
+        //Debug.Log("Time spent for MA NLoS Detection: " + ((Time.realtimeSinceStartup - t_MA_NLoS) * 1000f) + " ms");
+
+        // Single antenna case
+
+        //float t_SA_NLoS = Time.realtimeSinceStartup;
 
         ParallelRayCastingDataCars RayCastingData = new ParallelRayCastingDataCars
         {
@@ -593,6 +627,9 @@ public partial class ChannelGenManager : MonoBehaviour
         // parallel raycasting
         JobHandle rayCastJob = RaycastCommand.ScheduleBatch(commands, results, 16, jobHandle_RayCastingData);
         rayCastJob.Complete();
+        
+        //Debug.Log("Time spent for SA NLoS Detection: " + ((Time.realtimeSinceStartup - t_SA_NLoS) * 1000f) + " ms");
+        #endregion
 
         var map = new NativeMultiHashMap<int, Path_and_IDs>(50000, Allocator.TempJob);
         var idarray = new NativeArray<int>(MPC_num*link_num, Allocator.TempJob);
@@ -962,44 +999,5 @@ public struct Path
         Car_IDs = link;
         Distance = d;
         Attenuation = att;
-    }
-}
-
-
-
-
-
-[BurstCompile]
-public struct ParallelRayCastingDataCars : IJobParallelFor
-{
-    [ReadOnly] public float CastingDistance;
-    [ReadOnly] public NativeArray<Vector3> Cars_Positions;
-    [ReadOnly] public NativeArray<V6> MPC_Array;
-    [ReadOnly] public NativeArray<Vector3> MPC_Perpendiculars;
-
-    [WriteOnly] public NativeArray<float> SoA;
-    [WriteOnly] public NativeArray<int> SeenIndicator;
-    [WriteOnly] public NativeArray<RaycastCommand> commands;
-    public void Execute(int index)
-    {
-        int i_car = Mathf.FloorToInt(index / MPC_Array.Length);
-        int i_mpc = index - i_car * MPC_Array.Length;
-        Vector3 temp_direction = MPC_Array[i_mpc].Coordinates - Cars_Positions[i_car];
-
-        float cosA = Vector3.Dot(MPC_Array[i_mpc].Normal, -temp_direction.normalized); // NOTE: the sign is negative (upd 24.02.2022: the sign of temp_direction)
-        if (cosA > (float)0.1 && temp_direction.magnitude < CastingDistance)
-        {
-            //SoA[index] = Mathf.Sign(Vector3.Dot(MPC_Perpendiculars[i_mpc], -temp_direction.normalized));
-            SoA[index] = Vector3.Dot(MPC_Perpendiculars[i_mpc], -temp_direction.normalized);
-            SeenIndicator[index] = 1;
-            commands[index] = new RaycastCommand(Cars_Positions[i_car], temp_direction.normalized, temp_direction.magnitude);
-        }
-        else
-        {
-            SoA[index] = 0;
-            SeenIndicator[index] = 0;
-            commands[index] = new RaycastCommand(new Vector3(0, 0, 0), new Vector3(0, 0, 0), 0);
-        }
-
     }
 }
