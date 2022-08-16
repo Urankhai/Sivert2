@@ -552,8 +552,10 @@ public partial class ChannelGenManager : MonoBehaviour
         //Debug.Log("Time spent for LoS Detection: " + ((Time.realtimeSinceStartup - t_LoS) * 1000f) + " ms");
 
         int subcarier_position = 10;
-        double diff_H = (H_LoS[subcarier_position].Real - MA_H_LoS[subcarier_position].Real) + (H_LoS[subcarier_position].Imaginary - MA_H_LoS[subcarier_position].Imaginary);
-        Debug.Log("Channel difference = " + diff_H);
+        double SA_H = H_LoS[subcarier_position].Real + H_LoS[subcarier_position].Imaginary;
+        double MA_H = MA_H_LoS[subcarier_position].Real + MA_H_LoS[subcarier_position].Imaginary;
+        double diff_H = (H_LoS[subcarier_position].Real - MA_H_LoS[subcarier_position + 0*FFTNum].Real) + (H_LoS[subcarier_position].Imaginary - MA_H_LoS[subcarier_position + 0*FFTNum].Imaginary);
+        Debug.Log("Single Antenna SA_H = " + SA_H + "Multiple Antenna MA_H = " + MA_H + "; Channel difference = " + diff_H);
 
         /*
         float ant_distance = resultsLoS[0].distance;
