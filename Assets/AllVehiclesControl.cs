@@ -76,23 +76,40 @@ public class AllVehiclesControl : MonoBehaviour
         Channel_Links_Coordinates = new NativeArray<ChannelLinksCoordinates>(channel_link_num, Allocator.Persistent);
 
         int channel_link_count = 0;
+        int temp_ant1_counter = 0;
+        int temp_ant2_counter = 0;
         for (int car1 = 0; car1 < CarsAntennaNumbers.Length; car1++)
         {
             int car1_ant_num = CarsAntennaNumbers[car1];
+            temp_ant2_counter += car1_ant_num;
             for (int car2 = car1 + 1; car2 < CarsAntennaNumbers.Length; car2++)
             {
                 int car2_ant_num = CarsAntennaNumbers[car2];
                 for (int ant1 = 0; ant1 < car1_ant_num; ant1++)
                 {
+                    int temp_ant1ID = temp_ant1_counter + ant1;
                     for (int ant2 = 0; ant2 < car2_ant_num; ant2++)
                     {
-                        Channel_Links[channel_link_count] = new ChannelLinks(car1, car2, ant1, ant2);
+                        int temp_ant2ID = temp_ant2_counter + ant2;
+                        Channel_Links[channel_link_count] = new ChannelLinks(car1, car2, ant1, temp_ant1ID, ant2, temp_ant2ID);
                         channel_link_count += 1;
                     }
                 }
+                temp_ant2_counter += car2_ant_num;
             }
+            temp_ant1_counter += car1_ant_num;
         }
-
+        /*
+        for (int car1ID = 0; car1ID < carsArray.Length; car1ID++)
+        {
+            int car1_ant_num = CarsAntennaNumbers[car1ID];
+            for (int car1antID = 0; car1antID < car1_ant_num; car1antID++)
+            {
+                int temp_ant1ID_in_array= temp_ant1ID + car1antID;
+            }
+            temp_ant1ID += car1_ant_num;
+        }
+        */
     }
     private void OnDestroy()
     {
@@ -161,31 +178,46 @@ public class AllVehiclesControl : MonoBehaviour
                 if (j > 0)
                 { antenna_name += (j + 1); }
                 // Check correct names of the antennas
-                if (carsArray[i].transform.Find(antenna_name) == null)
-                {
-                }
-                else
-                {
-                    Vector3 temp_coor = carsArray[i].transform.Find(antenna_name).position;
-                    CarsAntennaPositions[counted_antenna + j] = temp_coor;
-                    //Debug.Log("Car" + i + ": coordinates of " + antenna_name + " = " + temp_coor);
-                }
+                // int carID = i;
+                // int antID = j;
+                Vector3 antPos = carsArray[i].transform.Find(antenna_name).position;
+                CarsAntennaPositions[counted_antenna + j] = antPos;
+                //Debug.Log("Car" + i + ": coordinates of " + antenna_name + " = " + temp_coor);
+                
             }
             counted_antenna = CarsAntennaNumbers[i];
         }
 
+
         for (int i = 0; i < Channel_Links.Length; i++)
         {
-            int car1 = Channel_Links[i].Car1;
-            int ant1 = Channel_Links[i].V1Antenna;
 
-            int car2 = Channel_Links[i].Car2;
-            int ant2 = Channel_Links[i].V2Antenna;
-
-            Vector3 ant1_position = carsArray[car1].GetComponent<AntennaConfiguration>().antennas[ant1].transform.position;
-            Vector3 ant2_position = carsArray[car2].GetComponent<AntennaConfiguration>().antennas[ant2].transform.position;
+            //float t1 = Time.realtimeSinceStartup;
+            int temp_ant1ID = Channel_Links[i].V1AntennaID;
+            int temp_ant2ID = Channel_Links[i].V2AntennaID;
+            
+            Vector3 ant1_position = CarsAntennaPositions[temp_ant1ID]; // position of an antenna inside of the array of CarsAntennaPositions
+            Vector3 ant2_position = CarsAntennaPositions[temp_ant2ID]; // position of an antenna inside of the array of CarsAntennaPositions
+            //Debug.Log("t1: " + ((Time.realtimeSinceStartup - t1) * 1000000f) + " mics");
 
             Channel_Links_Coordinates[i] = new ChannelLinksCoordinates(ant1_position, ant2_position);
+
+            /*
+            float t2 = Time.realtimeSinceStartup;
+            int car1 = Channel_Links[i].Car1;
+            int ant1 = Channel_Links[i].V1Antenna;
+            
+            int car2 = Channel_Links[i].Car2;
+            int ant2 = Channel_Links[i].V2Antenna;
+            
+            Vector3 old_ant1_position = carsArray[car1].GetComponent<AntennaConfiguration>().antennas[ant1].transform.position;
+            Vector3 old_ant2_position = carsArray[car2].GetComponent<AntennaConfiguration>().antennas[ant2].transform.position;
+            Debug.Log("t2: " + ((Time.realtimeSinceStartup - t2) * 1000000f) + " mics");
+
+            Vector3 diff1 = old_ant1_position - ant1_position;
+            Vector3 diff2 = old_ant2_position - ant2_position;
+            Debug.Log("diff1 " + diff1 + "; diff2 " + diff2);
+            */
 
             //Debug.Log("Cars control: car[" + car1 + "], ant[" + ant1 + "] position " + ant1_position + "; car[" + car2 + "], ant[" + ant2 + "] position " + ant2_position);
         }

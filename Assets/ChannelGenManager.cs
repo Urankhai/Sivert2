@@ -257,20 +257,7 @@ public partial class ChannelGenManager : MonoBehaviour
 
 
         CornersNormalsPerpendiculars = MPC_Native_Script.Active_CornersNormalsPerpendiculars;
-        //DMC_Native = MPC_Native_Script.ActiveV6_DMC_NativeList;
-        //MPC1_Native = MPC_Native_Script.ActiveV6_MPC1_NativeList;
-        //MPC2_Native = MPC_Native_Script.ActiveV6_MPC2_NativeList;
-        //MPC3_Native = MPC_Native_Script.ActiveV6_MPC3_NativeList;
-
-        //DMC_attenuation = MPC_Native_Script.ActiveV6_DMC_Power;
-        //MPC1_attenuation = MPC_Native_Script.ActiveV6_MPC1_Power;
-        //MPC2_attenuation = MPC_Native_Script.ActiveV6_MPC2_Power;
-        //MPC3_attenuation = MPC_Native_Script.ActiveV6_MPC3_Power;
-
-        //DMC_perp = MPC_Native_Script.Active_DMC_Perpendiculars;
-        //MPC1_perp = MPC_Native_Script.Active_MPC1_Perpendiculars;
-        //MPC2_perp = MPC_Native_Script.Active_MPC2_Perpendiculars;
-        //MPC3_perp = MPC_Native_Script.Active_MPC3_Perpendiculars;
+        
         
         // for all MPCs
         MPC_num = MPC_Native_Script.ActiveV6_MPC_NativeList.Length;
@@ -285,8 +272,7 @@ public partial class ChannelGenManager : MonoBehaviour
         GameObject LookUpTable = GameObject.Find("LookUpTablesUpd");
         LookUpTableGenUpd LUT_Script = LookUpTable.GetComponent<LookUpTableGenUpd>();
         maxdistance = LUT_Script.MaxSeenDistance;
-        //maxNumberSeenMPC2 = LUT_Script.maxlengthMPC2;
-        //maxNumberSeenMPC3 = LUT_Script.maxlengthMPC3;
+        
 
         LookUpTableMPC2 = LUT_Script.LookUpTableMPC2;
         MPC2LUTID = LUT_Script.MPC2LUTID;
@@ -627,12 +613,54 @@ public partial class ChannelGenManager : MonoBehaviour
         // parallel raycasting
         JobHandle rayCastJob = RaycastCommand.ScheduleBatch(commands, results, 16, jobHandle_RayCastingData);
         rayCastJob.Complete();
-        
+
         //Debug.Log("Time spent for SA NLoS Detection: " + ((Time.realtimeSinceStartup - t_SA_NLoS) * 1000f) + " ms");
         #endregion
 
-        var map = new NativeMultiHashMap<int, Path_and_IDs>(50000, Allocator.TempJob);
-        var idarray = new NativeArray<int>(MPC_num*link_num, Allocator.TempJob);
+        #region HashMap procedure
+        //float tMA = Time.realtimeSinceStartup;
+        // Multy Antenna case
+        var MA_map = new NativeMultiHashMap<int, MA_Path_and_IDs>(MPC_num * Channel_Links.Length, Allocator.TempJob);
+        var MA_idarray = new NativeArray<int>(MPC_num * Channel_Links.Length, Allocator.TempJob);
+        MA_ChannelParametersAll MA_channelParameters = new MA_ChannelParametersAll
+        {
+            OmniAntennaFlag = OmniAntenna,
+            MPC_Attenuation = MPC_attenuation,
+            MPC_Array = MPC_Native,
+            MPC_Perp = MPC_perp,
+            DMCNum = DMC_num,
+            MPC1Num = MPC1_num,
+            MPC2Num = MPC2_num,
+            MPC3Num = MPC3_num,
+            MPCNum = MPC_num,
+
+            LookUpTableMPC2 = LookUpTableMPC2,
+            LUTIndexRangeMPC2 = MPC2LUTID,
+            LookUpTableMPC3 = LookUpTableMPC3,
+            LUTIndexRangeMPC3 = MPC3SeenID,
+
+            MA_channellinks = Channel_Links,
+            AntennasCoordinates = CarCoordinates,
+            CarsForwardsDir = CarForwardVect,
+
+            MA_Commands = MA_commands,
+            MA_Results = MA_results,
+            MA_SignOfArrival = MA_SoA,
+            MA_SeenIndicator = MA_Seen,
+
+            Pattern = Pattern,
+
+            IDArray = MA_idarray,
+            HashMap = MA_map.AsParallelWriter(),
+        };
+        JobHandle MA_channelParametersJob = MA_channelParameters.Schedule(MPC_num * Channel_Links.Length, 4);
+        MA_channelParametersJob.Complete();
+        //Debug.Log("tMA: " + ((Time.realtimeSinceStartup - tMA) * 1000f) + " ms");
+
+        //float tSA = Time.realtimeSinceStartup;
+        // Single Antenna case
+        var map = new NativeMultiHashMap<int, Path_and_IDs>(MPC_num * link_num, Allocator.TempJob);
+        var idarray = new NativeArray<int>(MPC_num * link_num, Allocator.TempJob);
         ChannelParametersAll channelParameters = new ChannelParametersAll
         {
             OmniAntennaFlag = OmniAntenna,
@@ -650,7 +678,7 @@ public partial class ChannelGenManager : MonoBehaviour
             LookUpTableMPC3 = LookUpTableMPC3,
             LUTIndexRangeMPC3 = MPC3SeenID,
 
-            ChannelLinks = Links,
+            channellinks = Links,
             CarsCoordinates = CarCoordinates,
             CarsForwardsDir = CarForwardVect,
 
@@ -666,6 +694,9 @@ public partial class ChannelGenManager : MonoBehaviour
         };
         JobHandle channelParametersJob = channelParameters.Schedule(MPC_num * link_num, 4);
         channelParametersJob.Complete();
+        //Debug.Log("tSA: " + ((Time.realtimeSinceStartup - tSA) * 1000f) + " ms");
+        #endregion
+
 
         #region Drwaing possible paths
         if (DrawingPath1 || DrawingPath2 || DrawingPath3)
@@ -714,7 +745,10 @@ public partial class ChannelGenManager : MonoBehaviour
         }
         #endregion
 
-        //float t_filt = Time.realtimeSinceStartup;
+        float t_filt_chan = Time.realtimeSinceStartup;
+        
+        #region Filtering procedure
+
         NativeList<int> nonzero_indexes = new NativeList<int>(Allocator.TempJob);
         IndexNonZeroFilter nzindexes = new IndexNonZeroFilter
         {
@@ -734,8 +768,9 @@ public partial class ChannelGenManager : MonoBehaviour
         JobHandle jobHandlelinkIndexes = linkIndexes.Schedule(link_num, 1, jobHandleIndexNonZeroFilter);
         //jobHandlelinkIndexes.Complete();
         //Debug.Log("Time spent for filtering: " + ((Time.realtimeSinceStartup - t_filt) * 1000f) + " ms");
-
         
+        #endregion
+
         ParallelChannel parallelChannel = new ParallelChannel
         {
             FFTSize = FFTNum,
@@ -752,10 +787,7 @@ public partial class ChannelGenManager : MonoBehaviour
         };
         JobHandle parallelChannelJob = parallelChannel.Schedule(FFTNum * link_num, 1, jobHandlelinkIndexes);
         parallelChannelJob.Complete();
-        //float t_chan = Time.realtimeSinceStartup;
-        //Debug.Log("Time spent for channel calculation: " + ((Time.realtimeSinceStartup - t_chan) * 1000f) + " ms");
-
-        //Debug.Log("Time spent for Raycasting all at once: " + ((Time.realtimeSinceStartup - t_all) * 1000f) + " ms");
+        Debug.Log("Time spent for filtering and channel calculation: " + ((Time.realtimeSinceStartup - t_filt_chan) * 1000f) + " ms");
 
         #region FFT operation
         //float t_fft = Time.realtimeSinceStartup;
@@ -825,6 +857,9 @@ public partial class ChannelGenManager : MonoBehaviour
         nonzero_indexes.Dispose();
         map.Dispose();
         idarray.Dispose();
+
+        MA_map.Dispose();
+        MA_idarray.Dispose();
 
         //DMC_Paths.Dispose();
         //DMC_test.Dispose();
@@ -935,13 +970,30 @@ public struct ChannelLinks
     public int Car1;
     public int Car2;
     public int V1Antenna;
+    public int V1AntennaID;
     public int V2Antenna;
-    public ChannelLinks(int car1, int car2, int ant1, int ant2)
+    public int V2AntennaID;
+    public ChannelLinks(int car1, int car2, int ant1, int ant1ID, int ant2, int ant2ID)
     {
         Car1 = car1;
         Car2 = car2;
         V1Antenna = ant1;
+        V1AntennaID = ant1ID;
         V2Antenna = ant2;
+        V2AntennaID = ant2ID;
+    }
+}
+
+public struct CarIDAntIDAntPos
+{
+    public int CarID;
+    public int AntID;
+    public Vector3 AntPos;
+    public CarIDAntIDAntPos(int carID, int antID, Vector3 antPos)
+    {
+         CarID = carID;
+         AntID = antID;
+        AntPos = antPos;
     }
 }
 
@@ -1001,3 +1053,46 @@ public struct Path
         Attenuation = att;
     }
 }
+
+public struct MA_Path_and_IDs
+{
+    public MA_PathChain ChainIDs;
+    public MA_Path PathParameters;
+    public int PathOrder;
+
+    public MA_Path_and_IDs(MA_PathChain pathChain, MA_Path pathParameters, int order)
+    {
+        ChainIDs = pathChain;
+        PathParameters = pathParameters;
+        PathOrder = order;
+    }
+}
+public struct MA_PathChain
+{
+    // for tracking the all paths inclusions
+    public ChannelLinks ChLink;
+    public int ID1;
+    public int ID2;
+    public int ID3;
+    
+    public MA_PathChain(ChannelLinks chlink, int i1, int i2, int i3)
+    {
+        ChLink = chlink;
+        ID1 = i1;
+        ID2 = i2;
+        ID3 = i3;
+    }
+}
+public struct MA_Path
+{
+    public ChannelLinks ChLink;
+    public float Distance;
+    public float Attenuation;
+    public MA_Path(ChannelLinks link, float d, float att)
+    {
+        ChLink = link;
+        Distance = d;
+        Attenuation = att;
+    }
+}
+
