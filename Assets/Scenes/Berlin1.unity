@@ -3408,6 +3408,8 @@ MonoBehaviour:
   DrawingPath1: 0
   DrawingPath2: 1
   DrawingPath3: 0
+  ChannelLinksNumber: 0
+  ChannelLinkDraw: 4
   SubframePower: 0
 --- !u!4 &604064072
 Transform:

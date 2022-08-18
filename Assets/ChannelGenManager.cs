@@ -43,7 +43,7 @@ public partial class ChannelGenManager : MonoBehaviour
     //double[] H_noise_output;
     double[] X_inputValues;
     [Space]
-    [Header("CHARTS FOR DRAWING")]
+    [Header("DETAILS FOR DRAWING")]
     [Space]
 
     public Transform tfTime;
@@ -58,6 +58,9 @@ public partial class ChannelGenManager : MonoBehaviour
     public bool DrawingPath1 = false;
     public bool DrawingPath2 = false;
     public bool DrawingPath3 = false;
+    public int ChannelLinksNumber;
+    public int ChannelLinkDraw = 4;
+
 
     // MPCs Data
     //NativeArray<V6> DMC_Native;
@@ -152,7 +155,9 @@ public partial class ChannelGenManager : MonoBehaviour
 
     NativeArray<System.Numerics.Complex> MA_H_LoS;
     NativeArray<System.Numerics.Complex> MA_H_NLoS;
-
+    [Space]
+    [Header("MISC for TESTING")]
+    [Space]
     public float SubframePower;
     private void OnEnable()
     {
@@ -295,6 +300,7 @@ public partial class ChannelGenManager : MonoBehaviour
         AntennaMatrix = ControlScript.AntennaMatrix;
         Channel_Links = ControlScript.Channel_Links;
         Channel_Links_Coordinates = ControlScript.Channel_Links_Coordinates;
+        ChannelLinksNumber = Channel_Links.Length;
 
 
         // MA LoS
@@ -358,7 +364,8 @@ public partial class ChannelGenManager : MonoBehaviour
     //void Update()
     {
         FrameCounter++;
-
+        #region Writing data into csv file
+        /*
         if (Mathf.Abs(-18.0f - CarCoordinates[1].z) < 1.0f)
         {
             Debug.Log("Frame number = " + FrameCounter);
@@ -391,8 +398,8 @@ public partial class ChannelGenManager : MonoBehaviour
                 EditorApplication.isPlaying = false;
             }
         }
-
-        //Debug.Log("Car 4 coordinates " + CarCoordinates[1]);
+        */
+        #endregion
 
         #region Defining edges of seen areas for all links (The duration is about 20 micro seconds)
         AreaOverlaps areaOverlaps = new AreaOverlaps
@@ -656,6 +663,54 @@ public partial class ChannelGenManager : MonoBehaviour
         JobHandle MA_channelParametersJob = MA_channelParameters.Schedule(MPC_num * Channel_Links.Length, 4);
         MA_channelParametersJob.Complete();
         //Debug.Log("tMA: " + ((Time.realtimeSinceStartup - tMA) * 1000f) + " ms");
+        #region Drwaing possible paths
+        if (DrawingPath1 || DrawingPath2 || DrawingPath3)
+        {
+            for (int i = (ChannelLinkDraw - 1) * MPC_num; i < ChannelLinkDraw * MPC_num; i++)
+            {
+                if (MA_map.TryGetFirstValue(i, out MA_Path_and_IDs path, out NativeMultiHashMapIterator<int> nativeMultiHashMapIterator))
+                {
+                    do
+                    {
+                        if (path.PathOrder == 1 && DrawingPath1)
+                        {
+                            Vector3 ant1_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V1AntennaID];
+                            Vector3 ant2_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V2AntennaID];
+                            Vector3 MPC_coor1 = MPC_Native[path.ChainIDs.ID1].Coordinates;
+                            Debug.DrawLine(ant1_coor, MPC_coor1, Color.white);
+                            Debug.DrawLine(MPC_coor1, ant2_coor, Color.grey);
+                        }
+                        else if (path.PathOrder == 2 && DrawingPath2)
+                        {
+                            Vector3 ant1_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V1AntennaID];
+                            Vector3 ant2_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V2AntennaID];
+                            Vector3 MPC_coor1 = MPC_Native[path.ChainIDs.ID1].Coordinates;
+                            Vector3 MPC_coor2 = MPC_Native[path.ChainIDs.ID2].Coordinates;
+                            Debug.DrawLine(ant1_coor, MPC_coor1, Color.yellow);
+                            Debug.DrawLine(MPC_coor1, MPC_coor2, Color.yellow);
+                            Debug.DrawLine(MPC_coor2, ant2_coor, Color.yellow);
+                        }
+                        else if (path.PathOrder == 3 && DrawingPath3)
+                        {
+                            Vector3 ant1_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V1AntennaID];
+                            Vector3 ant2_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V2AntennaID];
+                            Vector3 MPC_coor1 = MPC_Native[path.ChainIDs.ID1].Coordinates;
+                            Vector3 MPC_coor2 = MPC_Native[path.ChainIDs.ID2].Coordinates;
+                            Vector3 MPC_coor3 = MPC_Native[path.ChainIDs.ID3].Coordinates;
+                            Debug.DrawLine(ant1_coor, MPC_coor1, Color.green);
+                            Debug.DrawLine(MPC_coor1, MPC_coor2, Color.green);
+                            Debug.DrawLine(MPC_coor2, MPC_coor3, Color.green);
+                            Debug.DrawLine(MPC_coor3, ant2_coor, Color.green);
+                            //Debug.Log(20 * Mathf.Log10(path3.AngularGain));
+                        }
+                    }
+                    while (MA_map.TryGetNextValue(out path, ref nativeMultiHashMapIterator));
+                }
+            }
+        }
+        #endregion
+
+
 
         //float tSA = Time.realtimeSinceStartup;
         // Single Antenna case
@@ -697,7 +752,7 @@ public partial class ChannelGenManager : MonoBehaviour
         //Debug.Log("tSA: " + ((Time.realtimeSinceStartup - tSA) * 1000f) + " ms");
         #endregion
 
-
+        
         #region Drwaing possible paths
         if (DrawingPath1 || DrawingPath2 || DrawingPath3)
         {
@@ -744,11 +799,63 @@ public partial class ChannelGenManager : MonoBehaviour
             }
         }
         #endregion
-
-        float t_filt_chan = Time.realtimeSinceStartup;
         
-        #region Filtering procedure
 
+        
+
+        // MA case
+        float t_MA_chan = Time.realtimeSinceStartup;
+        NativeList<int> MA_nonzero_indexes = new NativeList<int>(Allocator.TempJob);
+        IndexNonZeroFilter MA_nzindexes = new IndexNonZeroFilter
+        {
+            Array = MA_idarray,
+        };
+        JobHandle MA_jobHandleIndexNonZeroFilter = MA_nzindexes.ScheduleAppend(MA_nonzero_indexes, MA_idarray.Length, 64);
+        MA_jobHandleIndexNonZeroFilter.Complete();
+
+        NativeArray<Vector2Int> MA_link_ids = new NativeArray<Vector2Int>(Channel_Links.Length, Allocator.TempJob);
+        LinkIndexes MA_linkIndexes = new LinkIndexes
+        {
+            MPCNum = MPC_num,
+            NonZeroIndexes = MA_nonzero_indexes,
+
+            LinkIDs = MA_link_ids,
+        };
+        JobHandle MA_jobHandlelinkIndexes = MA_linkIndexes.Schedule(Channel_Links.Length, 1, MA_jobHandleIndexNonZeroFilter);
+        //MA_jobHandlelinkIndexes.Complete();
+        
+        MA_ParallelChannel MA_parallelChannel = new MA_ParallelChannel
+        {
+            FFTSize = FFTNum,
+            InverseLambdas = InverseWavelengths,
+            HashMap = MA_map,
+            MPCNum = MPC_num,
+            LinkNum = Channel_Links.Length,
+            NonZeroIndexes = MA_nonzero_indexes,
+            LinkIDs = MA_link_ids,
+
+            H_NLoS = MA_H_NLoS,
+        };
+        JobHandle MA_parallelChannelJob = MA_parallelChannel.Schedule(FFTNum * Channel_Links.Length, 1, MA_jobHandlelinkIndexes);
+        MA_parallelChannelJob.Complete();
+        Debug.Log("Time spent for MA channel calculation: " + ((Time.realtimeSinceStartup - t_MA_chan) * 1000f) + " ms");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // SA case
+        float t_SA_chan = Time.realtimeSinceStartup;
         NativeList<int> nonzero_indexes = new NativeList<int>(Allocator.TempJob);
         IndexNonZeroFilter nzindexes = new IndexNonZeroFilter
         {
@@ -765,11 +872,9 @@ public partial class ChannelGenManager : MonoBehaviour
 
             LinkIDs = link_ids,
         };
-        JobHandle jobHandlelinkIndexes = linkIndexes.Schedule(link_num, 1, jobHandleIndexNonZeroFilter);
-        //jobHandlelinkIndexes.Complete();
-        //Debug.Log("Time spent for filtering: " + ((Time.realtimeSinceStartup - t_filt) * 1000f) + " ms");
+        JobHandle jobHandlelinkIndexes = linkIndexes.Schedule(link_num, 1, MA_jobHandleIndexNonZeroFilter);
+        jobHandlelinkIndexes.Complete();
         
-        #endregion
 
         ParallelChannel parallelChannel = new ParallelChannel
         {
@@ -787,7 +892,14 @@ public partial class ChannelGenManager : MonoBehaviour
         };
         JobHandle parallelChannelJob = parallelChannel.Schedule(FFTNum * link_num, 1, jobHandlelinkIndexes);
         parallelChannelJob.Complete();
-        Debug.Log("Time spent for filtering and channel calculation: " + ((Time.realtimeSinceStartup - t_filt_chan) * 1000f) + " ms");
+        Debug.Log("Time spent for SA channel calculation: " + ((Time.realtimeSinceStartup - t_SA_chan) * 1000f) + " ms");
+        //Debug.Log("Number of paths = " + nonzero_indexes.Length);
+
+        int test_subcarrier = 32;
+        double diff_H = H_NLoS[test_subcarrier].Real - MA_H_NLoS[test_subcarrier].Real + H_NLoS[test_subcarrier].Imaginary - MA_H_NLoS[test_subcarrier].Imaginary;
+        Debug.Log("Channel results difference = " + diff_H);
+
+
 
         #region FFT operation
         //float t_fft = Time.realtimeSinceStartup;
@@ -858,8 +970,10 @@ public partial class ChannelGenManager : MonoBehaviour
         map.Dispose();
         idarray.Dispose();
 
+        MA_link_ids.Dispose();
         MA_map.Dispose();
         MA_idarray.Dispose();
+        MA_nonzero_indexes.Dispose();
 
         //DMC_Paths.Dispose();
         //DMC_test.Dispose();
@@ -901,67 +1015,6 @@ public struct LinkIndexes : IJobParallelFor
             { max_i = i; }
         }
         LinkIDs[link_id] = new Vector2Int(min_i, max_i);
-    }
-}
-
-[BurstCompile]
-public struct ParallelChannel : IJobParallelFor
-{
-    [ReadOnly] public int FFTSize;
-    [ReadOnly] public NativeArray<Vector3> CarsPositions;
-    [ReadOnly] public NativeArray<Vector3> CarsFwd;
-    //[ReadOnly] public NativeArray<Vector2Int> Links;
-    [ReadOnly] public NativeArray<float> InverseLambdas;
-    [ReadOnly] public NativeMultiHashMap<int, Path_and_IDs> HashMap;
-    [ReadOnly] public int MPCNum;
-    [ReadOnly] public int LinkNum;
-    [ReadOnly] public NativeArray<int> NonZeroIndexes;
-    [ReadOnly] public NativeArray<Vector2Int> LinkIDs;
-
-    [WriteOnly] public NativeArray<System.Numerics.Complex> H_NLoS;
-    public void Execute(int index)
-    {
-        int i_link = Mathf.FloorToInt(index / FFTSize);
-        int i_sub = index - i_link * FFTSize; // calculating index within FFT array
-
-        // defining zero temp value
-        System.Numerics.Complex temp_HNLoS = new System.Numerics.Complex(0, 0);
-
-
-        
-        //for (int i = i_link * MPCNum; i < (i_link + 1) * MPCNum; i++)
-        for (int i = LinkIDs[i_link].x; i <= LinkIDs[i_link].y; i++)
-        {
-            
-            if (HashMap.TryGetFirstValue(NonZeroIndexes[i], out Path_and_IDs path, out NativeMultiHashMapIterator<int> nativeMultiHashMapIterator))
-            {
-                // if there are many paths, then sum them up
-                do
-                {
-                    float HNLoS_dist = path.PathParameters.Distance;
-
-                    //float frequence = 299792458.0f * InverseLambdas[i_sub];
-                    //float inverse_lambda = InverseLambdas[i_sub];
-                    //float test_pi = Mathf.PI;
-                    
-
-                    float HNLoS_dist_gain = 1.0f / (InverseLambdas[i_sub] * 4 * Mathf.PI * HNLoS_dist); // Free space loss
-                    float HNLoS_attnuation = path.PathParameters.Attenuation;
-
-                    //float test_arg = 2.0f * Mathf.PI * InverseLambdas[i_sub] * HNLoS_dist;
-
-                    double ReExpNLoS = Mathf.Cos(2.0f * Mathf.PI * InverseLambdas[i_sub] * HNLoS_dist);
-                    double ImExpNLoS = Mathf.Sin(2.0f * Mathf.PI * InverseLambdas[i_sub] * HNLoS_dist);
-                    // defining exponent
-                    System.Numerics.Complex ExpNLoS = new System.Numerics.Complex(ReExpNLoS, ImExpNLoS);
-
-                    temp_HNLoS += HNLoS_attnuation * HNLoS_dist_gain * ExpNLoS;                    
-
-                }
-                while (HashMap.TryGetNextValue(out path, ref nativeMultiHashMapIterator));
-            }
-        }
-        H_NLoS[index] = temp_HNLoS;        
     }
 }
 
