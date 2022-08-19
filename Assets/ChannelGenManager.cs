@@ -183,7 +183,7 @@ public partial class ChannelGenManager : MonoBehaviour
         List<float> listA = new List<float>();
         List<float> listB = new List<float>();
 
-        using (var reader = new StreamReader(@"C:\Users\Administrator\Desktop\Aleksei\Parallel3DChaSi\GSCM1_InTimeDomain\Assets\EADF\HelixV2VEADF.csv"))
+        using (var reader = new StreamReader(@"C:\Users\Administrator\Desktop\Aleksei\Sivert2\Assets\EADF\GBT.csv"))
         {
             while (!reader.EndOfStream)
             {
@@ -926,12 +926,17 @@ public partial class ChannelGenManager : MonoBehaviour
         double RSS = 0;
 
         float t_H = Time.realtimeSinceStartup;
+        float absH = 0;
         for (int i = 0; i < H.Length; i++)
-        { H[i] = H_LoS[i] + H_NLoS[i]; }
+        { 
+            H[i] = H_LoS[i] + H_NLoS[i]; 
+            absH += (float)((H[i].Real) * (H[i].Real) + (H[i].Imaginary) * (H[i].Imaginary));
+        }
+        absH /= FFTNum;
         for (int i =0; i < MA_H_ToT.Length; i++)
         { MA_H_ToT[i] = MA_H_LoS[i] + MA_H_NLoS[i]; }
 
-        float absH = (float)((H[0].Real) * (H[0].Real) + (H[0].Imaginary) * (H[0].Imaginary));
+        
         float SNR = 10 * Mathf.Log10(absH * PowerInMilliWatts) - NoiseLevelInDB;
         //Debug.Log("SNR no MRC = " + SNR);
 
@@ -955,6 +960,13 @@ public partial class ChannelGenManager : MonoBehaviour
         }
         float abs_MRC_H = (float)MRC_H;
         float SNR_MRC = 10 * Mathf.Log10(abs_MRC_H * PowerInMilliWatts) - NoiseLevelInDB;
+
+        
+        if (Mathf.Abs(SNR - SNR_MRC) > 10)
+        {
+            Debug.Log("MRC is too good to be true!");
+        }
+        
 
         SNR_avg += SNR;
         MRC_SNR_avg += SNR_MRC;
