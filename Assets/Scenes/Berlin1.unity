@@ -1790,7 +1790,6 @@ MonoBehaviour:
   antennas:
   - {fileID: 1107463538}
   - {fileID: 1677215672}
-  - {fileID: 561843457}
   radiation_patterns: []
   radiationPatternActive: 0
 --- !u!1 &310858546
@@ -3646,6 +3645,10 @@ MonoBehaviour:
   fsubcarriers: 156250
   SNR_Text: {fileID: 221880285}
   OmniAntenna: 1
+  ReceivingCarID: 0
+  TransmittingCarID: 1
+  TransmittingAntennaID: 0
+  links_IDs: 
   filename: H_freq4002.csv
   tfTime: {fileID: 1144777040}
   tfFreq: {fileID: 956427315}

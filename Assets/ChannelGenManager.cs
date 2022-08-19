@@ -27,6 +27,14 @@ public partial class ChannelGenManager : MonoBehaviour
     public Text SNR_Text;
     public bool OmniAntenna = false;
 
+    [Space]
+    [Header("MRC Parameters")]
+    [Space]
+    public int ReceivingCarID = 0;
+    public int TransmittingCarID = 1;
+    public int TransmittingAntennaID = 0;
+    public List<int> links_IDs = new List<int>();
+
 
     //float EdgeEffectCoeff = -100.0f;
 
@@ -377,6 +385,25 @@ public partial class ChannelGenManager : MonoBehaviour
          */
 
         //EdgeEffectCoeff = 10.0f;
+
+        // Stuff for MRC
+        if (ReceivingCarID > TransmittingCarID)
+        {
+            int temp_carID = ReceivingCarID;
+            ReceivingCarID = TransmittingCarID;
+            TransmittingCarID = temp_carID;
+        }
+
+        if (TransmittingAntennaID >= CarsAntennaNumbers[TransmittingCarID])
+        { TransmittingAntennaID = CarsAntennaNumbers[TransmittingCarID] - 1; }
+
+        for (int i = 0; i < Channel_Links.Length; i++)
+        {
+            if (Channel_Links[i].Car1 == ReceivingCarID && Channel_Links[i].Car2 == TransmittingCarID && Channel_Links[i].V2Antenna == TransmittingAntennaID)
+            {
+                links_IDs.Add(i);
+            }
+        }
     }
 
     private void FixedUpdate()
@@ -942,16 +969,7 @@ public partial class ChannelGenManager : MonoBehaviour
 
         // MRC
 
-        int MRC_car_ID = 0;
-        int MRC_ant_ID = 0;
-        List<int> links_IDs = new List<int>();
-        for (int i = 0; i < Channel_Links.Length; i++)
-        {
-            if (Channel_Links[i].Car1 == MRC_car_ID && Channel_Links[i].V2Antenna == MRC_ant_ID)
-            {
-                links_IDs.Add(i);
-            }
-        }
+        
 
         double MRC_H = 0;
         for (int sub_i = 0; sub_i < H.Length; sub_i++)
