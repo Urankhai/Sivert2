@@ -6,7 +6,7 @@ using Unity.Jobs;
 using Unity.Burst;
 using System.IO;
 using System;
-using UnityEditor;
+using UnityEngine.UI;
 
 public partial class ChannelGenManager : MonoBehaviour
 {
@@ -17,11 +17,14 @@ public partial class ChannelGenManager : MonoBehaviour
     [Header("PHYSICAL PARAMETERS")]
     [Space]
     public float PowerInMilliWatts;
+    public float NoiseLevelInDB;
     public float SpeedofLight = 299792458.0f; // m/s
     public float CarrierFrequency = (float)(5.9 * Mathf.Pow(10, 9)); // GHz
     public float fsubcarriers = (float)200000; // kHz
     //public int NumberOfSubcarriers = 64; // 1024 for LTE
-
+    private float SNR_avg = 0;
+    private float MRC_SNR_avg = 0;
+    public Text SNR_Text;
     public bool OmniAntenna = false;
 
 
@@ -155,6 +158,8 @@ public partial class ChannelGenManager : MonoBehaviour
 
     NativeArray<System.Numerics.Complex> MA_H_LoS;
     NativeArray<System.Numerics.Complex> MA_H_NLoS;
+    NativeArray<System.Numerics.Complex> MA_H_ToT;
+    NativeArray<System.Numerics.Complex> MA_H_MRC;
     [Space]
     [Header("MISC for TESTING")]
     [Space]
@@ -237,6 +242,8 @@ public partial class ChannelGenManager : MonoBehaviour
 
         MA_H_LoS.Dispose();
         MA_H_NLoS.Dispose();
+        MA_H_ToT.Dispose();
+        MA_H_MRC.Dispose();
     }
 
 
@@ -356,6 +363,18 @@ public partial class ChannelGenManager : MonoBehaviour
 
         MA_H_LoS = new NativeArray<System.Numerics.Complex>(FFTNum * Channel_Links.Length, Allocator.Persistent);
         MA_H_NLoS = new NativeArray<System.Numerics.Complex>(FFTNum * Channel_Links.Length, Allocator.Persistent);
+
+        MA_H_ToT = new NativeArray<System.Numerics.Complex>(FFTNum * Channel_Links.Length, Allocator.Persistent);
+        // The size of MRC should lbe equal 
+        MA_H_MRC = new NativeArray<System.Numerics.Complex>(FFTNum * CarsAntennaPositions.Length, Allocator.Persistent);
+        /*
+         * H1 00 10 -> 00: 10 + 11 + 12 (H00 = H1); 10 -> 00 + 01
+         * H2 00 11
+         * H3 00 12
+         * H4 01 10
+         * H5 01 11
+         * H6 01 12
+         */
 
         //EdgeEffectCoeff = 10.0f;
     }
@@ -838,7 +857,7 @@ public partial class ChannelGenManager : MonoBehaviour
         };
         JobHandle MA_parallelChannelJob = MA_parallelChannel.Schedule(FFTNum * Channel_Links.Length, 1, MA_jobHandlelinkIndexes);
         MA_parallelChannelJob.Complete();
-        Debug.Log("Time spent for MA channel calculation: " + ((Time.realtimeSinceStartup - t_MA_chan) * 1000f) + " ms");
+        //Debug.Log("Time spent for MA channel calculation: " + ((Time.realtimeSinceStartup - t_MA_chan) * 1000f) + " ms");
 
 
 
@@ -892,12 +911,12 @@ public partial class ChannelGenManager : MonoBehaviour
         };
         JobHandle parallelChannelJob = parallelChannel.Schedule(FFTNum * link_num, 1, jobHandlelinkIndexes);
         parallelChannelJob.Complete();
-        Debug.Log("Time spent for SA channel calculation: " + ((Time.realtimeSinceStartup - t_SA_chan) * 1000f) + " ms");
+        //Debug.Log("Time spent for SA channel calculation: " + ((Time.realtimeSinceStartup - t_SA_chan) * 1000f) + " ms");
         //Debug.Log("Number of paths = " + nonzero_indexes.Length);
 
-        int test_subcarrier = 32;
-        double diff_H = H_NLoS[test_subcarrier].Real - MA_H_NLoS[test_subcarrier].Real + H_NLoS[test_subcarrier].Imaginary - MA_H_NLoS[test_subcarrier].Imaginary;
-        Debug.Log("Channel results difference = " + diff_H);
+        //int test_subcarrier = 32;
+        //double diff_H = H_NLoS[test_subcarrier].Real - MA_H_NLoS[test_subcarrier].Real + H_NLoS[test_subcarrier].Imaginary - MA_H_NLoS[test_subcarrier].Imaginary;
+        //Debug.Log("Channel results difference = " + diff_H);
 
 
 
@@ -905,9 +924,52 @@ public partial class ChannelGenManager : MonoBehaviour
         //float t_fft = Time.realtimeSinceStartup;
         System.Numerics.Complex[] outputSignal_Freq = FastFourierTransform.FFT(H, false);
         double RSS = 0;
-        
+
+        float t_H = Time.realtimeSinceStartup;
         for (int i = 0; i < H.Length; i++)
         { H[i] = H_LoS[i] + H_NLoS[i]; }
+        for (int i =0; i < MA_H_ToT.Length; i++)
+        { MA_H_ToT[i] = MA_H_LoS[i] + MA_H_NLoS[i]; }
+
+        float absH = (float)((H[0].Real) * (H[0].Real) + (H[0].Imaginary) * (H[0].Imaginary));
+        float SNR = 10 * Mathf.Log10(absH * PowerInMilliWatts) - NoiseLevelInDB;
+        //Debug.Log("SNR no MRC = " + SNR);
+
+        // MRC
+
+        int MRC_car_ID = 0;
+        int MRC_ant_ID = 0;
+        List<int> links_IDs = new List<int>();
+        for (int i = 0; i < Channel_Links.Length; i++)
+        {
+            if (Channel_Links[i].Car1 == MRC_car_ID && Channel_Links[i].V2Antenna == MRC_ant_ID)
+            {
+                links_IDs.Add(i);
+            }
+        }
+
+        double MRC_H = 0;
+        for (int i = 0; i < links_IDs.Count; i++)
+        {
+            MRC_H += MA_H_ToT[0 + links_IDs[i] * FFTNum].Real* MA_H_ToT[0 + links_IDs[i] * FFTNum].Real + MA_H_ToT[0 + links_IDs[i] * FFTNum].Imaginary* MA_H_ToT[0 + links_IDs[i] * FFTNum].Imaginary;
+        }
+        float abs_MRC_H = (float)MRC_H;
+        float SNR_MRC = 10 * Mathf.Log10(abs_MRC_H * PowerInMilliWatts) - NoiseLevelInDB;
+
+        SNR_avg += SNR;
+        MRC_SNR_avg += SNR_MRC;
+        if (FrameCounter % 10 == 0)
+        {
+            SNR_avg /= 10;
+            MRC_SNR_avg /= 10;
+            Debug.Log("SNR = " + SNR_avg + "; SNR MRC = " + MRC_SNR_avg);
+            SNR_Text.text = "SNR = " + SNR_avg.ToString("F2") + "; SNR MRC = " + MRC_SNR_avg.ToString("F2");
+            SNR_avg = 0;
+            MRC_SNR_avg = 0;
+        }
+        
+
+        //Debug.Log("Time spent for H calculation: " + ((Time.realtimeSinceStartup - t_H) * 1000f) + " ms");
 
         Y_output = new double[H.Length];
         H_output = new double[H.Length];
