@@ -183,7 +183,7 @@ public partial class ChannelGenManager : MonoBehaviour
         List<float> listA = new List<float>();
         List<float> listB = new List<float>();
 
-        using (var reader = new StreamReader(@"C:\Users\Administrator\Desktop\Aleksei\Sivert2\Assets\EADF\GBT.csv"))
+        using (var reader = new StreamReader(@"C:\Users\Administrator\Desktop\Aleksei\Sivert2\Assets\EADF\HelixEADF.csv"))
         {
             while (!reader.EndOfStream)
             {
@@ -937,7 +937,7 @@ public partial class ChannelGenManager : MonoBehaviour
         { MA_H_ToT[i] = MA_H_LoS[i] + MA_H_NLoS[i]; }
 
         
-        float SNR = 10 * Mathf.Log10(absH * PowerInMilliWatts) - NoiseLevelInDB;
+        float SNR = 10 * Mathf.Log10(absH) + 23.0f - NoiseLevelInDB;
         //Debug.Log("SNR no MRC = " + SNR);
 
         // MRC
@@ -954,19 +954,22 @@ public partial class ChannelGenManager : MonoBehaviour
         }
 
         double MRC_H = 0;
-        for (int i = 0; i < links_IDs.Count; i++)
+        for (int sub_i = 0; sub_i < H.Length; sub_i++)
         {
-            MRC_H += MA_H_ToT[0 + links_IDs[i] * FFTNum].Real* MA_H_ToT[0 + links_IDs[i] * FFTNum].Real + MA_H_ToT[0 + links_IDs[i] * FFTNum].Imaginary* MA_H_ToT[0 + links_IDs[i] * FFTNum].Imaginary;
+            for (int i = 0; i < links_IDs.Count; i++)
+            {
+                MRC_H += MA_H_ToT[sub_i + links_IDs[i] * FFTNum].Real * MA_H_ToT[sub_i + links_IDs[i] * FFTNum].Real + MA_H_ToT[sub_i + links_IDs[i] * FFTNum].Imaginary * MA_H_ToT[sub_i + links_IDs[i] * FFTNum].Imaginary;
+            }
         }
-        float abs_MRC_H = (float)MRC_H;
-        float SNR_MRC = 10 * Mathf.Log10(abs_MRC_H * PowerInMilliWatts) - NoiseLevelInDB;
+        float abs_MRC_H = (float)MRC_H/FFTNum;
+        float SNR_MRC = 10 * Mathf.Log10(abs_MRC_H) + 23.0f - NoiseLevelInDB;
 
-        
+        /*
         if (Mathf.Abs(SNR - SNR_MRC) > 10)
         {
             Debug.Log("MRC is too good to be true!");
         }
-        
+        */
 
         SNR_avg += SNR;
         MRC_SNR_avg += SNR_MRC;
