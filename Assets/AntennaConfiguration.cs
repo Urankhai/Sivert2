@@ -89,9 +89,10 @@ public class AntennaConfiguration : MonoBehaviour
                 EditorGUILayout.Space();
 
                 
-                if (GUILayout.Button("If radiation pattern is used"))
+                if (GUILayout.Button("Individual EADF files for each antenna"))
                 {
                     antennaConfiguration.radiation_pattern_button_counter++;
+
                     //Debug.Log(antennaConfiguration.radiation_pattern_button_counter);
                 }
                 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using Unity.Collections;
+using UnityEngine.UI;
 
 
 public class AllVehiclesControl : MonoBehaviour
@@ -19,6 +20,9 @@ public class AllVehiclesControl : MonoBehaviour
     [HideInInspector] public NativeArray<Vector2Int> AntennaMatrix;
     [HideInInspector] public NativeArray<ChannelLinks> Channel_Links;
     [HideInInspector] public NativeArray<ChannelLinksCoordinates> Channel_Links_Coordinates;
+
+    public TextAsset eadfFile;
+    Dictionary<string, string> eadf_real_imag;
 
     int channel_link_num;
     
@@ -38,6 +42,13 @@ public class AllVehiclesControl : MonoBehaviour
             int antenna_number = carsArray[i].GetComponent<AntennaConfiguration>().antennas.Count;
             bool eadf_activation = carsArray[i].GetComponent<AntennaConfiguration>().radiationPatternActive;
             Debug.Log(carsArray[i].name + " has " + antenna_number + " antennas; EADF is activated = " + eadf_activation);
+
+            if (eadf_activation == true)
+            {
+                eadfFile = carsArray[i].GetComponent<AntennaConfiguration>().radiation_patterns[0];
+                eadf_real_imag = new Dictionary<string, string>();
+                ReadEADFFile();
+            }
 
             CarsAntennaNumbers[i] = antenna_number;
 
@@ -110,6 +121,21 @@ public class AllVehiclesControl : MonoBehaviour
             temp_ant1ID += car1_ant_num;
         }
         */
+    }
+
+    void ReadEADFFile()
+    {
+        var splitFile = new string[] { "r\n", "\r", "\n" };
+        var splitLine = new char[] { ',' };
+        var Lines = eadfFile.text.Split(splitFile, System.StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < Lines.Length; i++)
+        {
+            print("Line = " + Lines[i]);
+            var line = Lines[i].Split(splitLine, System.StringSplitOptions.None);
+            string eadf_real = line[0];
+            string eadf_imag = line[1];
+            eadf_real_imag.Add(eadf_real, eadf_imag);
+        }
     }
     private void OnDestroy()
     {

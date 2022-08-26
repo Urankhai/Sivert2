@@ -1468,7 +1468,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 29
+    m_FontSize: 25
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 2
@@ -1790,6 +1790,7 @@ MonoBehaviour:
   antennas:
   - {fileID: 1107463538}
   - {fileID: 1677215672}
+  - {fileID: 561843457}
   radiation_patterns: []
   radiationPatternActive: 0
 --- !u!1 &310858546
@@ -11151,6 +11152,7 @@ MonoBehaviour:
   destinations:
   - {fileID: 219923700}
   - {fileID: 915961327}
+  eadfFile: {fileID: 0}
 --- !u!4 &1931987587
 Transform:
   m_ObjectHideFlags: 0

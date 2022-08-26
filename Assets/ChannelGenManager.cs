@@ -191,7 +191,7 @@ public partial class ChannelGenManager : MonoBehaviour
         List<float> listA = new List<float>();
         List<float> listB = new List<float>();
 
-        using (var reader = new StreamReader(@"C:\Users\Administrator\Desktop\Aleksei\Sivert2\Assets\EADF\HelixEADF.csv"))
+        using (var reader = new StreamReader(@"C:\Users\Administrator\Desktop\Aleksei\Sivert2\Assets\EADF\AnalyticalEADF.csv"))
         {
             while (!reader.EndOfStream)
             {
@@ -963,7 +963,7 @@ public partial class ChannelGenManager : MonoBehaviour
         for (int i =0; i < MA_H_ToT.Length; i++)
         { MA_H_ToT[i] = MA_H_LoS[i] + MA_H_NLoS[i]; }
 
-        
+
         float SNR = 10 * Mathf.Log10(absH) + 23.0f - NoiseLevelInDB;
         //Debug.Log("SNR no MRC = " + SNR);
 
