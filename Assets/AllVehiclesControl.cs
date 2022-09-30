@@ -22,7 +22,8 @@ public class AllVehiclesControl : MonoBehaviour
     [HideInInspector] public NativeArray<ChannelLinksCoordinates> Channel_Links_Coordinates;
 
     public TextAsset eadfFile;
-    Dictionary<string, string> eadf_real_imag;
+    //Dictionary<string, string> eadf_real_imag;
+    List<Vector2> eadf_real_imag;
 
     int channel_link_num;
     
@@ -45,9 +46,13 @@ public class AllVehiclesControl : MonoBehaviour
 
             if (eadf_activation == true)
             {
-                eadfFile = carsArray[i].GetComponent<AntennaConfiguration>().radiation_patterns[0];
-                eadf_real_imag = new Dictionary<string, string>();
-                ReadEADFFile();
+                for (int ant_i = 0; ant_i < antenna_number; ant_i++)
+                {
+                    eadfFile = carsArray[i].GetComponent<AntennaConfiguration>().radiation_patterns[ant_i];
+                    eadf_real_imag = new List<Vector2>();// new Dictionary<string, string>();
+                    ReadEADFFile();
+                    Debug.Log("EADF file has been read for Ant " + ant_i + "; EADF length = " + eadf_real_imag.Count);
+                }
             }
 
             CarsAntennaNumbers[i] = antenna_number;
@@ -130,12 +135,17 @@ public class AllVehiclesControl : MonoBehaviour
         var Lines = eadfFile.text.Split(splitFile, System.StringSplitOptions.RemoveEmptyEntries);
         for (int i = 0; i < Lines.Length; i++)
         {
-            print("Line = " + Lines[i]);
+            //print("ID: " + i + "; line = " + Lines[i]);
             var line = Lines[i].Split(splitLine, System.StringSplitOptions.None);
-            string eadf_real = line[0];
-            string eadf_imag = line[1];
-            eadf_real_imag.Add(eadf_real, eadf_imag);
+            
+            double eadf_real = double.Parse(line[0], System.Globalization.NumberStyles.Float);
+            double eadf_imag = double.Parse(line[1], System.Globalization.NumberStyles.Float);
+
+            Vector2 temp_line = new Vector2((float)eadf_real, (float)eadf_imag);
+
+            eadf_real_imag.Add(temp_line);
         }
+        
     }
     private void OnDestroy()
     {

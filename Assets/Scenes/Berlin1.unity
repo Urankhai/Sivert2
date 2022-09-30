@@ -1790,9 +1790,10 @@ MonoBehaviour:
   antennas:
   - {fileID: 1107463538}
   - {fileID: 1677215672}
-  - {fileID: 561843457}
-  radiation_patterns: []
-  radiationPatternActive: 0
+  radiation_patterns:
+  - {fileID: 4900000, guid: a9e12e82ad2f619498380ccaa6a4c4ef, type: 3}
+  - {fileID: 4900000, guid: 83f12396afef0a34fbd1cdbe1ef91c60, type: 3}
+  radiationPatternActive: 1
 --- !u!1 &310858546
 GameObject:
   m_ObjectHideFlags: 0
@@ -3829,9 +3830,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   antennas:
   - {fileID: 1533634962}
-  - {fileID: 618531407}
-  radiation_patterns: []
-  radiationPatternActive: 0
+  radiation_patterns:
+  - {fileID: 4900000, guid: e2ac503b08e2fcb40999201e577bd249, type: 3}
+  radiationPatternActive: 1
 --- !u!1 &684505658
 GameObject:
   m_ObjectHideFlags: 0

@@ -11,21 +11,15 @@ public class AntennaConfiguration : MonoBehaviour
 
     [HideInInspector]
     public List<GameObject> antennas = new List<GameObject>();
-    [HideInInspector] 
+    [HideInInspector]
     public List<TextAsset> radiation_patterns = new List<TextAsset>();
-    
-    bool showAntennaList = true;
 
     public bool radiationPatternActive = false;
 
     
-    int radiation_pattern_button_counter = 0;
 
 
-
-
-
- #region Editor
+    #region Editor
 #if UNITY_EDITOR
     [CustomEditor(typeof(AntennaConfiguration))]
     public class AntennaConfigurationEditor : Editor
@@ -38,107 +32,86 @@ public class AntennaConfiguration : MonoBehaviour
             EditorGUILayout.Space();
 
             AntennaArrayDefinitionFunc(antennaConfiguration);
-            
 
-            
-
-            
         }
-
 
 
         static void AntennaArrayDefinitionFunc(AntennaConfiguration antennaConfiguration)
         {
-            
-            
+
+
             GUIStyle myFoldoutStyle = new GUIStyle(EditorStyles.foldout);
             Color myStyleColor = Color.blue;
             myFoldoutStyle.fontStyle = FontStyle.Bold;
             myFoldoutStyle.normal.textColor = myStyleColor;
 
-            //antennaConfiguration.showAntennaList = EditorGUILayout.Foldout(antennaConfiguration.showAntennaList, "Antenna array information", false);
-            antennaConfiguration.showAntennaList = EditorGUILayout.Foldout(antennaConfiguration.showAntennaList, "Antenna array information", false, myFoldoutStyle);
-            
+            //antennaConfiguration.showAntennaList = EditorGUILayout.Foldout(antennaConfiguration.showAntennaList, "Antenna array information", false, myFoldoutStyle);
+            EditorGUILayout.LabelField("Antenna array information", EditorStyles.boldLabel);
+            //Debug.Log(antennaConfiguration.showAntennaList);
 
-            if (antennaConfiguration.showAntennaList)
+            EditorGUI.indentLevel++;
+            // size
+            List<GameObject> antennaArray = antennaConfiguration.antennas;
+            int AntennaNumber = Mathf.Max(1, EditorGUILayout.IntField("Number of antennas", antennaArray.Count));
+
+            // correct size
+            while (AntennaNumber > antennaArray.Count)
+            {
+                antennaArray.Add(null);
+            }
+            while (AntennaNumber < antennaArray.Count)
+            {
+                antennaArray.RemoveAt(antennaArray.Count - 1);
+            }
+
+            // serialize
+            for (int i = 0; i < antennaArray.Count; i++)
+            {
+                int display_number = i + 1;
+                antennaArray[i] = EditorGUILayout.ObjectField("Antenna " + display_number, antennaArray[i], typeof(GameObject), true) as GameObject;
+
+            }
+
+            EditorGUILayout.Space();
+
+            //Debug.Log(antennaConfiguration.radiation_patterns);
+
+            EditorGUI.indentLevel--;
+
+
+            //antennaConfiguration.showRadiationList = EditorGUILayout.Foldout(antennaConfiguration.showRadiationList, "Radiation patterns files", false, myFoldoutStyle);
+
+            EditorGUILayout.LabelField("Individual EADF files for each antenna", EditorStyles.boldLabel);
+            if (antennaConfiguration.radiationPatternActive)
             {
                 EditorGUI.indentLevel++;
-                // size
-                List<GameObject> antennaArray = antennaConfiguration.antennas;
-                int AntennaNumber = Mathf.Max(1, EditorGUILayout.IntField("Number of antennas", antennaArray.Count));
-
+                // define list of csv files
+                List<TextAsset> eadfArray = antennaConfiguration.radiation_patterns;
                 // correct size
-                while (AntennaNumber > antennaArray.Count)
+                while (AntennaNumber > eadfArray.Count)
                 {
-                    antennaArray.Add(null);
+                    eadfArray.Add(null);
                 }
-                while (AntennaNumber < antennaArray.Count)
+                while (AntennaNumber < eadfArray.Count)
                 {
-                    antennaArray.RemoveAt(antennaArray.Count - 1);
+                    eadfArray.RemoveAt(eadfArray.Count - 1);
                 }
 
                 // serialize
                 for (int i = 0; i < antennaArray.Count; i++)
                 {
                     int display_number = i + 1;
-                    antennaArray[i] = EditorGUILayout.ObjectField("Antenna " + display_number, antennaArray[i], typeof(GameObject), true) as GameObject;
+                    eadfArray[i] = EditorGUILayout.ObjectField("EADF " + display_number, eadfArray[i], typeof(TextAsset), true) as TextAsset;
 
                 }
-                
-                // Add information about radiation pattern
-                EditorGUILayout.Space();
-
-                
-                if (GUILayout.Button("Individual EADF files for each antenna"))
-                {
-                    antennaConfiguration.radiation_pattern_button_counter++;
-
-                    //Debug.Log(antennaConfiguration.radiation_pattern_button_counter);
-                }
-                
-                
-
-                if (antennaConfiguration.radiation_pattern_button_counter % 2 == 1)
-                {
-                    antennaConfiguration.radiationPatternActive = true;
-                    // define list of csv files
-                    List<TextAsset> eadfArray = antennaConfiguration.radiation_patterns;
-                    // correct size
-                    while (AntennaNumber > eadfArray.Count)
-                    {
-                        eadfArray.Add(null);
-                    }
-                    while (AntennaNumber < eadfArray.Count)
-                    {
-                        eadfArray.RemoveAt(eadfArray.Count - 1);
-                    }
-                    // serialize
-                    for (int i = 0; i < antennaArray.Count; i++)
-                    {
-                        eadfArray[i] = EditorGUILayout.ObjectField("EADF " + i, eadfArray[i], typeof(TextAsset), true) as TextAsset;
-                    }
-                }
-                else
-                {
-                    antennaConfiguration.radiationPatternActive = false;
-                    List<TextAsset> eadfArray = antennaConfiguration.radiation_patterns;
-                    //Debug.Log("Size eadfArray = " + eadfArray.Count);
-
-                    for (int i = 0; i < eadfArray.Count; i++)
-                    {
-                        eadfArray.RemoveAt(i);
-                    }
-                    //Debug.Log("Size eadfArray = " + eadfArray.Count);
-                }
-
-                //Debug.Log(antennaConfiguration.radiationPattern);
-
                 EditorGUI.indentLevel--;
             }
+
+
         }
 
     }
 
 #endif
-#endregion
+    #endregion
 }
