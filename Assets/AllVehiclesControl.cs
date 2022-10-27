@@ -20,10 +20,14 @@ public class AllVehiclesControl : MonoBehaviour
     [HideInInspector] public NativeArray<Vector2Int> AntennaMatrix;
     [HideInInspector] public NativeArray<ChannelLinks> Channel_Links;
     [HideInInspector] public NativeArray<ChannelLinksCoordinates> Channel_Links_Coordinates;
+    [HideInInspector] public NativeArray<V4Int> EADF_Edges;
+    [HideInInspector] public NativeArray<Vector2> EADF_Values;
 
     public TextAsset eadfFile;
     //Dictionary<string, string> eadf_real_imag;
     List<Vector2> eadf_real_imag;
+    List<Vector2> all_eadf_files;
+    List<int> all_eadf_sizes;
 
     int channel_link_num;
     
@@ -36,7 +40,12 @@ public class AllVehiclesControl : MonoBehaviour
         CarForwardVect = new NativeArray<Vector3>(carsArray.Length, Allocator.Persistent);
         CarsAntennaNumbers = new NativeArray<int>(carsArray.Length, Allocator.Persistent);
 
+        // create a list consists of sizes of EADF files
+        all_eadf_sizes = new List<int>();
+        all_eadf_files = new List<Vector2>();
+
         int total_antenna_number = 0;
+        int eadf_array_size_all = 0;
         for (int i = 0; i < carsArray.Length; i++)
         {
             // get information about the number of antennas
@@ -49,9 +58,13 @@ public class AllVehiclesControl : MonoBehaviour
                 for (int ant_i = 0; ant_i < antenna_number; ant_i++)
                 {
                     eadfFile = carsArray[i].GetComponent<AntennaConfiguration>().radiation_patterns[ant_i];
-                    eadf_real_imag = new List<Vector2>();// new Dictionary<string, string>();
+                    
+                    eadf_real_imag = new List<Vector2>();// define a new list for eadf matrix
                     ReadEADFFile();
-                    Debug.Log("EADF file has been read for Ant " + ant_i + "; EADF length = " + eadf_real_imag.Count);
+                    eadf_array_size_all += eadf_real_imag.Count;
+                    all_eadf_sizes.Add(eadf_real_imag.Count);
+                    all_eadf_files.AddRange(eadf_real_imag);
+                    Debug.Log("EADF file has been read for Ant " + ant_i + "; EADF length = " + eadf_real_imag.Count + "; check list length " + all_eadf_files.Count);
                 }
             }
 
@@ -59,7 +72,7 @@ public class AllVehiclesControl : MonoBehaviour
 
             total_antenna_number += antenna_number;
         }
-        Debug.Log("Total antenna number = " + total_antenna_number);
+        Debug.Log("Total antenna number = " + total_antenna_number + "; all EADF size = " + eadf_array_size_all);
 
         CarsAntennaPositions = new NativeArray<Vector3>(total_antenna_number, Allocator.Persistent);
         AntennaMatrix = new NativeArray<Vector2Int>(total_antenna_number, Allocator.Persistent);
@@ -90,6 +103,8 @@ public class AllVehiclesControl : MonoBehaviour
 
         Channel_Links = new NativeArray<ChannelLinks>(channel_link_num, Allocator.Persistent);
         Channel_Links_Coordinates = new NativeArray<ChannelLinksCoordinates>(channel_link_num, Allocator.Persistent);
+        EADF_Edges = new NativeArray<V4Int>(channel_link_num, Allocator.Persistent);
+        EADF_Values = new NativeArray<Vector2>(eadf_array_size_all, Allocator.Persistent);
 
         int channel_link_count = 0;
         int temp_ant1_counter = 0;
@@ -115,17 +130,7 @@ public class AllVehiclesControl : MonoBehaviour
             }
             temp_ant1_counter += car1_ant_num;
         }
-        /*
-        for (int car1ID = 0; car1ID < carsArray.Length; car1ID++)
-        {
-            int car1_ant_num = CarsAntennaNumbers[car1ID];
-            for (int car1antID = 0; car1antID < car1_ant_num; car1antID++)
-            {
-                int temp_ant1ID_in_array= temp_ant1ID + car1antID;
-            }
-            temp_ant1ID += car1_ant_num;
-        }
-        */
+        
     }
 
     void ReadEADFFile()
@@ -160,6 +165,9 @@ public class AllVehiclesControl : MonoBehaviour
 
         Channel_Links.Dispose();
         Channel_Links_Coordinates.Dispose();
+
+        EADF_Edges.Dispose();
+        EADF_Values.Dispose();
     }
     
     

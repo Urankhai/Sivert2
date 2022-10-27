@@ -1156,6 +1156,23 @@ public struct ChannelLinksCoordinates
         Ant2Coordinates = coord2;
     }
 }
+public struct V4Int
+{
+    public int EADF1_Lft;
+    public int EADF1_Rht;
+
+    public int EADF2_Lft;
+    public int EADF2_Rht;
+    public V4Int(int x1, int x2, int y1, int y2)
+    {
+        EADF1_Lft = x1;
+        EADF1_Rht = x2;
+
+        EADF2_Lft = y1;
+        EADF2_Rht = y2;
+    }
+}
+
 
 public struct Path_and_IDs
 {
