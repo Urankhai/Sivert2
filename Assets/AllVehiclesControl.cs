@@ -27,6 +27,7 @@ public class AllVehiclesControl : MonoBehaviour
     //Dictionary<string, string> eadf_real_imag;
     List<Vector2> eadf_real_imag;
     List<Vector2> all_eadf_files;
+    List<Vector2Int> temp_eadf_edges;
     List<int> all_eadf_sizes;
 
     int channel_link_num;
@@ -44,6 +45,8 @@ public class AllVehiclesControl : MonoBehaviour
         all_eadf_sizes = new List<int>();
         all_eadf_files = new List<Vector2>();
 
+        temp_eadf_edges = new List<Vector2Int>();
+
         int total_antenna_number = 0;
         int eadf_array_size_all = 0;
         for (int i = 0; i < carsArray.Length; i++)
@@ -57,6 +60,7 @@ public class AllVehiclesControl : MonoBehaviour
             {
                 for (int ant_i = 0; ant_i < antenna_number; ant_i++)
                 {
+                    int temp_edge_lft = all_eadf_files.Count;
                     eadfFile = carsArray[i].GetComponent<AntennaConfiguration>().radiation_patterns[ant_i];
                     
                     eadf_real_imag = new List<Vector2>();// define a new list for eadf matrix
@@ -64,7 +68,13 @@ public class AllVehiclesControl : MonoBehaviour
                     eadf_array_size_all += eadf_real_imag.Count;
                     all_eadf_sizes.Add(eadf_real_imag.Count);
                     all_eadf_files.AddRange(eadf_real_imag);
+
+                    int temp_edge_rht = all_eadf_files.Count - 1;
+                    temp_eadf_edges.Add(new Vector2Int(temp_edge_lft, temp_edge_rht));
+
                     Debug.Log("EADF file has been read for Ant " + ant_i + "; EADF length = " + eadf_real_imag.Count + "; check list length " + all_eadf_files.Count);
+                    Debug.Log("Car" + i + " ant" + ant_i + ": eadf range [" + temp_edge_lft + ", " + temp_edge_rht + "]");
+                    Debug.Log("EADF values [" + all_eadf_files[temp_edge_lft].x + " + " + all_eadf_files[temp_edge_lft].y + "i, " + all_eadf_files[temp_edge_rht].x + " + " + all_eadf_files[temp_edge_rht].y + "i]");
                 }
             }
 
