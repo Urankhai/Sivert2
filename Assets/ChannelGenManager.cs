@@ -11,7 +11,7 @@ using UnityEngine.UI;
 public partial class ChannelGenManager : MonoBehaviour
 {
     int FrameCounter;
-    int NeigbouringCount;
+    //int NeigbouringCount;
     
     [Space]
     [Header("PHYSICAL PARAMETERS")]
@@ -118,6 +118,9 @@ public partial class ChannelGenManager : MonoBehaviour
 
     NativeArray<ChannelLinks> Channel_Links;
     NativeArray<ChannelLinksCoordinates> Channel_Links_Coordinates;
+
+    NativeArray<V4Int> EADF_Edges;
+    NativeArray<Vector2> EADF_Values;
 
     // Creating nativearrays in this script that should be destroyed
     NativeArray<Vector2Int> Links;
@@ -258,7 +261,7 @@ public partial class ChannelGenManager : MonoBehaviour
     void Start()
     {
         FrameCounter = 0;
-        NeigbouringCount = 0;
+        //NeigbouringCount = 0;
         /// for Fourier transform
         X_inputValues = new double[H.Length];
         for (int i = 0; i < H.Length; i++)
@@ -313,9 +316,13 @@ public partial class ChannelGenManager : MonoBehaviour
         CarsAntennaNumbers = ControlScript.CarsAntennaNumbers;
         CarsAntennaPositions = ControlScript.CarsAntennaPositions;
         AntennaMatrix = ControlScript.AntennaMatrix;
+        
         Channel_Links = ControlScript.Channel_Links;
         Channel_Links_Coordinates = ControlScript.Channel_Links_Coordinates;
         ChannelLinksNumber = Channel_Links.Length;
+
+        EADF_Edges = ControlScript.EADF_Edges;
+        EADF_Values = ControlScript.EADF_Values;
 
 
         // MA LoS

@@ -113,6 +113,7 @@ public class AllVehiclesControl : MonoBehaviour
 
         Channel_Links = new NativeArray<ChannelLinks>(channel_link_num, Allocator.Persistent);
         Channel_Links_Coordinates = new NativeArray<ChannelLinksCoordinates>(channel_link_num, Allocator.Persistent);
+
         EADF_Edges = new NativeArray<V4Int>(channel_link_num, Allocator.Persistent);
         EADF_Values = new NativeArray<Vector2>(eadf_array_size_all, Allocator.Persistent);
 
@@ -133,6 +134,11 @@ public class AllVehiclesControl : MonoBehaviour
                     {
                         int temp_ant2ID = temp_ant2_counter + ant2;
                         Channel_Links[channel_link_count] = new ChannelLinks(car1, car2, ant1, temp_ant1ID, ant2, temp_ant2ID);
+                        // keeping starting and ending points of EADF files inside a big nativearray
+                        V4Int tempV4int = new V4Int(temp_eadf_edges[temp_ant1ID].x, temp_eadf_edges[temp_ant1ID].y, temp_eadf_edges[temp_ant2ID].x, temp_eadf_edges[temp_ant2ID].y);
+                        EADF_Edges[channel_link_count] = tempV4int;
+
+
                         channel_link_count += 1;
                     }
                 }
@@ -140,7 +146,15 @@ public class AllVehiclesControl : MonoBehaviour
             }
             temp_ant1_counter += car1_ant_num;
         }
+
         
+        // rewriting list<Vector2> into nativarray<Vector2>
+        for (int eadf_i = 0; eadf_i < all_eadf_files.Count; eadf_i++)
+        {
+            EADF_Values[eadf_i] = all_eadf_files[eadf_i];
+        }
+
+        Debug.Log("Number of links = " + channel_link_count + "; size of the total EADF nativearray = " + all_eadf_files.Count);
     }
 
     void ReadEADFFile()
