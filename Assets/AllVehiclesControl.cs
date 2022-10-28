@@ -69,12 +69,13 @@ public class AllVehiclesControl : MonoBehaviour
                     all_eadf_sizes.Add(eadf_real_imag.Count);
                     all_eadf_files.AddRange(eadf_real_imag);
 
-                    int temp_edge_rht = all_eadf_files.Count - 1;
-                    temp_eadf_edges.Add(new Vector2Int(temp_edge_lft, temp_edge_rht));
+                    // we calculate the range
+                    int temp_edge_rng = all_eadf_files.Count - temp_edge_lft;
+                    temp_eadf_edges.Add(new Vector2Int(temp_edge_lft, temp_edge_rng));
 
                     Debug.Log("EADF file has been read for Ant " + ant_i + "; EADF length = " + eadf_real_imag.Count + "; check list length " + all_eadf_files.Count);
-                    Debug.Log("Car" + i + " ant" + ant_i + ": eadf range [" + temp_edge_lft + ", " + temp_edge_rht + "]");
-                    Debug.Log("EADF values [" + all_eadf_files[temp_edge_lft].x + " + " + all_eadf_files[temp_edge_lft].y + "i, " + all_eadf_files[temp_edge_rht].x + " + " + all_eadf_files[temp_edge_rht].y + "i]");
+                    //Debug.Log("Car" + i + " ant" + ant_i + ": eadf range [" + temp_edge_lft + ", " + temp_edge_rng + "]");
+                    //Debug.Log("EADF values [" + all_eadf_files[temp_edge_lft].x + " + " + all_eadf_files[temp_edge_lft].y + "i, " + all_eadf_files[temp_edge_rng].x + " + " + all_eadf_files[temp_edge_rht].y + "i]");
                 }
             }
 

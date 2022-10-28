@@ -324,8 +324,13 @@ public partial class ChannelGenManager : MonoBehaviour
         EADF_Edges = ControlScript.EADF_Edges;
         EADF_Values = ControlScript.EADF_Values;
 
+        // Further, we will need to cut pieces of the long nativearray
+        // testing the slicing capabilities; this part is used in LoS and NLoS channel calculations
+        // var slice1 = new NativeSlice<Vector2>(EADF_Values, EADF_Edges[0].EADF1_Lft, EADF_Edges[0].EADF1_Rng);
+        // var slice2 = new NativeSlice<Vector2>(EADF_Values, EADF_Edges[1].EADF1_Lft, EADF_Edges[1].EADF1_Rng);
+        // var slice3 = new NativeSlice<Vector2>(EADF_Values, EADF_Edges[0].EADF2_Lft, EADF_Edges[0].EADF2_Rng);
 
-        // MA LoS
+        // MA LoS (Multiple Antenna)
         MA_commandsLoS = new NativeArray<RaycastCommand>(Channel_Links.Length, Allocator.Persistent);
         MA_resultsLoS = new NativeArray<RaycastHit>(Channel_Links.Length, Allocator.Persistent);
 
@@ -355,7 +360,7 @@ public partial class ChannelGenManager : MonoBehaviour
         commands = new NativeArray<RaycastCommand>((DMC_num + MPC1_num + MPC2_num + MPC3_num) * car_num, Allocator.Persistent);
         results = new NativeArray<RaycastHit>((DMC_num + MPC1_num + MPC2_num + MPC3_num) * car_num, Allocator.Persistent);
 
-        // MPCs processing for the MA case
+        // MPCs processing for the MA case (Multiple Antenna)
         
         MA_SoA = new NativeArray<float>((DMC_num + MPC1_num + MPC2_num + MPC3_num) * CarsAntennaPositions.Length, Allocator.Persistent);
         MA_Seen = new NativeArray<int>((DMC_num + MPC1_num + MPC2_num + MPC3_num) * CarsAntennaPositions.Length, Allocator.Persistent);
@@ -565,6 +570,8 @@ public partial class ChannelGenManager : MonoBehaviour
             MA_raycastresults = MA_resultsLoS,
             inverseLambdas = InverseWavelengths,
             Pattern = Pattern,
+            EADFs = EADF_Values,
+            EADF_link_ranges = EADF_Edges,
 
             HLoS = MA_H_LoS,
         };
@@ -1166,17 +1173,17 @@ public struct ChannelLinksCoordinates
 public struct V4Int
 {
     public int EADF1_Lft;
-    public int EADF1_Rht;
+    public int EADF1_Rng; // identifying the range, how many steps from the left side should be done to reach the end
 
     public int EADF2_Lft;
-    public int EADF2_Rht;
+    public int EADF2_Rng;
     public V4Int(int x1, int x2, int y1, int y2)
     {
         EADF1_Lft = x1;
-        EADF1_Rht = x2;
+        EADF1_Rng = x2;
 
         EADF2_Lft = y1;
-        EADF2_Rht = y2;
+        EADF2_Rng = y2;
     }
 }
 
