@@ -21,7 +21,7 @@ public struct MA_ParallelLoSDetection : IJobParallelFor
     }
 }
 
-//[BurstCompile]
+[BurstCompile]
 public struct MA_ParallelLoSChannel : IJobParallelFor
 {
     [ReadOnly] public bool OmniAntennaFlag;

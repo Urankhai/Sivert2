@@ -717,6 +717,9 @@ public partial class ChannelGenManager : MonoBehaviour
 
             Pattern = Pattern,
 
+            EADFs = EADF_Values,
+            EADF_link_ranges = EADF_Edges,
+
             IDArray = MA_idarray,
             HashMap = MA_map.AsParallelWriter(),
         };

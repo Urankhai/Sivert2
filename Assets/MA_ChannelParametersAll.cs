@@ -36,6 +36,9 @@ public struct MA_ChannelParametersAll : IJobParallelFor
 
     // Antenna Pattern (EADF)
     [ReadOnly] public NativeArray<Vector2> Pattern;
+    
+    [ReadOnly] public NativeArray<Vector2> EADFs; // all eadf values in one nativearray
+    [ReadOnly] public NativeArray<V4Int> EADF_link_ranges; // this structure points to positions of a particular EADF in EADFs
 
     [WriteOnly] public NativeArray<int> IDArray; // Size MPCNum*LinksSize
     [WriteOnly]
@@ -59,7 +62,8 @@ public struct MA_ChannelParametersAll : IJobParallelFor
         int i_basic_ant1 = MA_channellinks[i_link].V1AntennaID;
         int i_basic_ant2 = MA_channellinks[i_link].V2AntennaID;
 
-
+        var pattern1 = new NativeSlice<Vector2>(EADFs, EADF_link_ranges[i_link].EADF1_Lft, EADF_link_ranges[i_link].EADF1_Rng);
+        var pattern2 = new NativeSlice<Vector2>(EADFs, EADF_link_ranges[i_link].EADF2_Lft, EADF_link_ranges[i_link].EADF2_Rng);
 
         int i_mpc_ant1 = i_basic_ant1 * MPCNum + i_mpc;
         float test_dist1 = MA_Results[i_mpc_ant1].distance;
@@ -89,15 +93,15 @@ public struct MA_ChannelParametersAll : IJobParallelFor
 
                     float antenna_gain1 = 1;
                     float antenna_gain2 = 1;
-                    if (OmniAntennaFlag == false)
-                    {
+                    //if (OmniAntennaFlag == false)
+                    //{
                         // find the angle of vision of MPCs from the car sight
                         float phi1 = Mathf.Acos(Vector3.Dot(dir1, fwd1));
                         float phi2 = Mathf.Acos(Vector3.Dot(dir2, fwd2));
 
-                        antenna_gain1 = EADF_Reconstruction(Pattern, phi1);
-                        antenna_gain2 = EADF_Reconstruction(Pattern, phi2);
-                    }
+                        antenna_gain1 = EADF_Reconstruction(pattern1, phi1);
+                        antenna_gain2 = EADF_Reconstruction(pattern2, phi2);
+                    //}
 
                     Vector3 norm = MPC_Array[i_mpc].Normal;
                     Vector3 perp = MPC_Perp[i_mpc];
@@ -164,15 +168,15 @@ public struct MA_ChannelParametersAll : IJobParallelFor
 
                             float antenna_gain1 = 1;
                             float antenna_gain2 = 1;
-                            if (OmniAntennaFlag == false)
-                            {
+                            //if (OmniAntennaFlag == false)
+                            //{
                                 // find the angle of vision of MPCs from the car sight
                                 float phi1 = Mathf.Acos(Vector3.Dot(dir1, fwd1));
                                 float phi2 = Mathf.Acos(Vector3.Dot(dir2, fwd2));
 
-                                antenna_gain1 = EADF_Reconstruction(Pattern, phi1);
-                                antenna_gain2 = EADF_Reconstruction(Pattern, phi2);
-                            }
+                                antenna_gain1 = EADF_Reconstruction(pattern1, phi1);
+                                antenna_gain2 = EADF_Reconstruction(pattern2, phi2);
+                            //}
 
 
 
@@ -260,15 +264,15 @@ public struct MA_ChannelParametersAll : IJobParallelFor
                                 
                                 float antenna_gain1 = 1;
                                 float antenna_gain2 = 1;
-                                if (OmniAntennaFlag == false)
-                                {
+                                //if (OmniAntennaFlag == false)
+                                //{
                                     // find the angle of vision of MPCs from the car sight
                                     float phi1 = Mathf.Acos(Vector3.Dot(dir1, fwd1));
                                     float phi2 = Mathf.Acos(Vector3.Dot(dir3, fwd2));
 
-                                    antenna_gain1 = EADF_Reconstruction(Pattern, phi1);
-                                    antenna_gain2 = EADF_Reconstruction(Pattern, phi2);
-                                }
+                                    antenna_gain1 = EADF_Reconstruction(pattern1, phi1);
+                                    antenna_gain2 = EADF_Reconstruction(pattern2, phi2);
+                                //}
 
                                 // Parameters of active MPC
                                 float att1 = MPC_Attenuation[i_mpc];
@@ -343,7 +347,7 @@ public struct MA_ChannelParametersAll : IJobParallelFor
 
     }
 
-    private float EADF_Reconstruction(NativeArray<Vector2> Pattern, float angle1)
+    private float EADF_Reconstruction(NativeSlice<Vector2> Pattern, float angle1)
     {
         System.Numerics.Complex Gain1 = 0;
         int L = Pattern.Length;
