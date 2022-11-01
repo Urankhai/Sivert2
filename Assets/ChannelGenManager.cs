@@ -69,8 +69,8 @@ public partial class ChannelGenManager : MonoBehaviour
     public bool DrawingPath1 = false;
     public bool DrawingPath2 = false;
     public bool DrawingPath3 = false;
-    public int ChannelLinksNumber;
-    public int ChannelLinkDraw = 4;
+    [HideInInspector] public int ChannelLinksNumber;
+    public int ChannelLinkToDraw = 2;
 
 
     // MPCs Data
@@ -416,6 +416,7 @@ public partial class ChannelGenManager : MonoBehaviour
                 links_IDs.Add(i);
             }
         }
+        Debug.Log("Start finished!");
     }
 
     private void FixedUpdate()
@@ -726,10 +727,51 @@ public partial class ChannelGenManager : MonoBehaviour
         JobHandle MA_channelParametersJob = MA_channelParameters.Schedule(MPC_num * Channel_Links.Length, 4);
         MA_channelParametersJob.Complete();
         //Debug.Log("tMA: " + ((Time.realtimeSinceStartup - tMA) * 1000f) + " ms");
+        #region Checking if first two links have the same number of active paths.
+        /*int first_link = 1;
+        int first_link_paths = 0;
+        
+        for (int i = (first_link - 1) * MPC_num; i < first_link * MPC_num; i++)
+        {
+            if (MA_map.TryGetFirstValue(i, out MA_Path_and_IDs path, out NativeMultiHashMapIterator<int> nativeMultiHashMapIterator))
+            {
+                do
+                {
+                    if (path.PathOrder == 1 || path.PathOrder == 2 || path.PathOrder == 3)
+                    {
+                        first_link_paths += 1;
+                    }
+                }
+                while (MA_map.TryGetNextValue(out path, ref nativeMultiHashMapIterator));
+            }
+        }
+
+        int second_link = 2;
+        int second_link_paths = 0;
+
+        for (int i = (second_link - 1) * MPC_num; i < second_link * MPC_num; i++)
+        {
+            if (MA_map.TryGetFirstValue(i, out MA_Path_and_IDs path, out NativeMultiHashMapIterator<int> nativeMultiHashMapIterator))
+            {
+                do
+                {
+                    if (path.PathOrder == 1 || path.PathOrder == 2 || path.PathOrder == 3)
+                    {
+                        second_link_paths += 1;
+                    }
+                }
+                while (MA_map.TryGetNextValue(out path, ref nativeMultiHashMapIterator));
+            }
+        }
+
+        Debug.Log("First link has " + first_link_paths + " paths, while second link has " + second_link_paths + " paths");
+        */
+        #endregion
+
         #region Drwaing possible paths
         if (DrawingPath1 || DrawingPath2 || DrawingPath3)
         {
-            for (int i = (ChannelLinkDraw - 1) * MPC_num; i < ChannelLinkDraw * MPC_num; i++)
+            for (int i = (ChannelLinkToDraw - 1) * MPC_num; i < ChannelLinkToDraw * MPC_num; i++)
             {
                 if (MA_map.TryGetFirstValue(i, out MA_Path_and_IDs path, out NativeMultiHashMapIterator<int> nativeMultiHashMapIterator))
                 {
@@ -745,10 +787,11 @@ public partial class ChannelGenManager : MonoBehaviour
                         }
                         else if (path.PathOrder == 2 && DrawingPath2)
                         {
-                            Vector3 ant1_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V1AntennaID];
-                            Vector3 ant2_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V2AntennaID];
-                            Vector3 MPC_coor1 = MPC_Native[path.ChainIDs.ID1].Coordinates;
-                            Vector3 MPC_coor2 = MPC_Native[path.ChainIDs.ID2].Coordinates;
+                            Vector3 elevation = new Vector3(0.0f, 0.1f, 0.0f);
+                            Vector3 ant1_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V1AntennaID] + elevation;
+                            Vector3 ant2_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V2AntennaID] + elevation;
+                            Vector3 MPC_coor1 = MPC_Native[path.ChainIDs.ID1].Coordinates + elevation;
+                            Vector3 MPC_coor2 = MPC_Native[path.ChainIDs.ID2].Coordinates + elevation;
                             Debug.DrawLine(ant1_coor, MPC_coor1, Color.yellow);
                             Debug.DrawLine(MPC_coor1, MPC_coor2, Color.yellow);
                             Debug.DrawLine(MPC_coor2, ant2_coor, Color.yellow);

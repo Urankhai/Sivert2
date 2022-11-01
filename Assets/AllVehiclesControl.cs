@@ -245,7 +245,7 @@ public class AllVehiclesControl : MonoBehaviour
                 // This piece of code can be used to search for the coordinates of the antennas via names
                 string antenna_name = "Antenna";
                 if (j > 0)
-                { antenna_name += (j + 1); }
+                { antenna_name += j; }
                 // Check correct names of the antennas
                 // int carID = i;
                 // int antID = j;
