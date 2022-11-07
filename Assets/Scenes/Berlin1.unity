@@ -1793,10 +1793,10 @@ MonoBehaviour:
   - {fileID: 1677215672}
   - {fileID: 561843457}
   radiation_patterns:
-  - {fileID: 4900000, guid: 83f12396afef0a34fbd1cdbe1ef91c60, type: 3}
-  - {fileID: 4900000, guid: 83f12396afef0a34fbd1cdbe1ef91c60, type: 3}
-  - {fileID: 4900000, guid: 83f12396afef0a34fbd1cdbe1ef91c60, type: 3}
-  - {fileID: 4900000, guid: 83f12396afef0a34fbd1cdbe1ef91c60, type: 3}
+  - {fileID: 4900000, guid: 0430d45de02736542b47f3f1edcdaf5f, type: 3}
+  - {fileID: 4900000, guid: 0430d45de02736542b47f3f1edcdaf5f, type: 3}
+  - {fileID: 4900000, guid: 0430d45de02736542b47f3f1edcdaf5f, type: 3}
+  - {fileID: 4900000, guid: 0430d45de02736542b47f3f1edcdaf5f, type: 3}
   radiationPatternActive: 1
 --- !u!1 &310858546
 GameObject:
@@ -2785,6 +2785,26 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 468222203}
   m_Mesh: {fileID: 4300474, guid: 370824966d86c091e9d17d4565ac7cf3, type: 3}
+--- !u!1 &477045294 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1395383510685086, guid: f463242ba59e68243b7a693d4f0cfc18,
+    type: 3}
+  m_PrefabInstance: {fileID: 1843929653}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &477045298
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 477045294}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 4
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300000, guid: 442255f864e16934790fbb3b49639885, type: 3}
 --- !u!1 &493069453
 GameObject:
   m_ObjectHideFlags: 0
@@ -3242,7 +3262,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 561843457}
   m_LocalRotation: {x: -0, y: -0.747159, z: 0, w: 0.6646454}
-  m_LocalPosition: {x: -0.012, y: 0.953, z: -0.495}
+  m_LocalPosition: {x: 0.056, y: 0.546, z: -0.975}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_Children: []
   m_Father: {fileID: 297854055}
@@ -3655,7 +3675,7 @@ MonoBehaviour:
   TransmittingCarID: 1
   TransmittingAntennaID: 0
   links_IDs: 
-  filename: H_freq4002.csv
+  filename: MRC_Evaluation_Iso.csv
   tfTime: {fileID: 1144777040}
   tfFreq: {fileID: 956427315}
   DrawingOverlaps: 0
@@ -3663,7 +3683,7 @@ MonoBehaviour:
   DrawingPath2: 1
   DrawingPath3: 0
   ChannelLinksNumber: 0
-  ChannelLinkDraw: 1
+  ChannelLinkToDraw: 4
   SubframePower: 0
 --- !u!4 &604064072
 Transform:
@@ -3835,7 +3855,7 @@ MonoBehaviour:
   antennas:
   - {fileID: 1533634962}
   radiation_patterns:
-  - {fileID: 4900000, guid: e2ac503b08e2fcb40999201e577bd249, type: 3}
+  - {fileID: 4900000, guid: 0430d45de02736542b47f3f1edcdaf5f, type: 3}
   radiationPatternActive: 1
 --- !u!1 &684505658
 GameObject:

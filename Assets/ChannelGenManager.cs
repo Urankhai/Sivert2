@@ -7,11 +7,12 @@ using Unity.Burst;
 using System.IO;
 using System;
 using UnityEngine.UI;
+using UnityEditor;
 
 public partial class ChannelGenManager : MonoBehaviour
 {
     int FrameCounter;
-    //int NeigbouringCount;
+    int NeigbouringCount;
     
     [Space]
     [Header("PHYSICAL PARAMETERS")]
@@ -20,7 +21,7 @@ public partial class ChannelGenManager : MonoBehaviour
     public float NoiseLevelInDB;
     public float SpeedofLight = 299792458.0f; // m/s
     public float CarrierFrequency = (float)(5.9 * Mathf.Pow(10, 9)); // GHz
-    public float fsubcarriers = (float)200000; // kHz
+    public float fsubcarriers = (float)200000; // kHz 156250 for 802.11p
     //public int NumberOfSubcarriers = 64; // 1024 for LTE
     private float SNR_avg = 0;
     private float MRC_SNR_avg = 0;
@@ -261,7 +262,7 @@ public partial class ChannelGenManager : MonoBehaviour
     void Start()
     {
         FrameCounter = 0;
-        //NeigbouringCount = 0;
+        NeigbouringCount = 0;
         /// for Fourier transform
         X_inputValues = new double[H.Length];
         for (int i = 0; i < H.Length; i++)
@@ -423,17 +424,19 @@ public partial class ChannelGenManager : MonoBehaviour
     //void Update()
     {
         FrameCounter++;
-        #region Writing data into csv file
         /*
+        #region Writing data into csv file
+        
         if (Mathf.Abs(-18.0f - CarCoordinates[1].z) < 1.0f)
         {
-            Debug.Log("Frame number = " + FrameCounter);
+            Debug.Log("Frame number = " + FrameCounter + "; car coordinates" + CarCoordinates[1]);
             NeigbouringCount++;
             if (NeigbouringCount == 1)
             {
                 Debug.Log("Frame number = " + FrameCounter);
                 
-                string path = @"C:\Users\Administrator\Desktop\Aleksei\Parallel3DChaSi\GSCM1_InTimeDomain\Assets\";
+                string path = @"C:\Users\Administrator\Desktop\Aleksei\Sivert2\Assets\Measurements\";
+
                 string path2 = path + filename;// Application.persistentDataPath + "/H_freq1.csv";
 
                 using (var file = File.CreateText(path2))
@@ -457,9 +460,9 @@ public partial class ChannelGenManager : MonoBehaviour
                 EditorApplication.isPlaying = false;
             }
         }
-        */
+        
         #endregion
-
+        */
         #region Defining edges of seen areas for all links (The duration is about 20 micro seconds)
         AreaOverlaps areaOverlaps = new AreaOverlaps
         {
@@ -768,7 +771,7 @@ public partial class ChannelGenManager : MonoBehaviour
         */
         #endregion
 
-        #region Drwaing possible paths
+        #region Drwaing MA possible paths
         if (DrawingPath1 || DrawingPath2 || DrawingPath3)
         {
             for (int i = (ChannelLinkToDraw - 1) * MPC_num; i < ChannelLinkToDraw * MPC_num; i++)
@@ -787,7 +790,7 @@ public partial class ChannelGenManager : MonoBehaviour
                         }
                         else if (path.PathOrder == 2 && DrawingPath2)
                         {
-                            Vector3 elevation = new Vector3(0.0f, 0.1f, 0.0f);
+                            Vector3 elevation = new Vector3(0.0f, 0.0f, 0.0f);
                             Vector3 ant1_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V1AntennaID] + elevation;
                             Vector3 ant2_coor = CarsAntennaPositions[path.ChainIDs.ChLink.V2AntennaID] + elevation;
                             Vector3 MPC_coor1 = MPC_Native[path.ChainIDs.ID1].Coordinates + elevation;
@@ -1020,35 +1023,46 @@ public partial class ChannelGenManager : MonoBehaviour
             absH += (float)((H[i].Real) * (H[i].Real) + (H[i].Imaginary) * (H[i].Imaginary));
         }
         absH /= FFTNum;
-        for (int i =0; i < MA_H_ToT.Length; i++)
-        { MA_H_ToT[i] = MA_H_LoS[i] + MA_H_NLoS[i]; }
 
+        List<string> MA_H_snapshot = new List<string>();
+        for (int i =0; i < MA_H_ToT.Length; i++)
+        { 
+            // Main Multi Antenna channel
+            MA_H_ToT[i] = MA_H_LoS[i] + MA_H_NLoS[i];
+
+            string MA_H_string;
+            if (MA_H_ToT[i].Imaginary > 0)
+            {
+                MA_H_string = MA_H_ToT[i].Real.ToString() + "+" + MA_H_ToT[i].Imaginary.ToString() + "i";
+                //double H_real = H[i].Real;
+                //double H_imag = H[i].Imaginary;
+            }
+            else // in case of negative imaginary part
+            {
+                MA_H_string = MA_H_ToT[i].Real.ToString() + MA_H_ToT[i].Imaginary.ToString() + "i";
+            }
+            MA_H_snapshot.Add(MA_H_string); // channel in frequence domain
+        }
+        H_save.Add(MA_H_snapshot);
 
         float SNR = 10 * Mathf.Log10(absH) + 23.0f - NoiseLevelInDB;
         //Debug.Log("SNR no MRC = " + SNR);
 
         // MRC
-
-        
+        var MRC_links = new int[] { 0, 1 };
 
         double MRC_H = 0;
         for (int sub_i = 0; sub_i < H.Length; sub_i++)
         {
-            for (int i = 0; i < links_IDs.Count; i++)
+            for (int i = 0; i < MRC_links.Length; i++)
             {
-                MRC_H += MA_H_ToT[sub_i + links_IDs[i] * FFTNum].Real * MA_H_ToT[sub_i + links_IDs[i] * FFTNum].Real + MA_H_ToT[sub_i + links_IDs[i] * FFTNum].Imaginary * MA_H_ToT[sub_i + links_IDs[i] * FFTNum].Imaginary;
+                MRC_H += MA_H_ToT[sub_i + MRC_links[i] * FFTNum].Real * MA_H_ToT[sub_i + MRC_links[i] * FFTNum].Real + MA_H_ToT[sub_i + MRC_links[i] * FFTNum].Imaginary * MA_H_ToT[sub_i + MRC_links[i] * FFTNum].Imaginary;
             }
         }
         float abs_MRC_H = (float)MRC_H/FFTNum;
         float SNR_MRC = 10 * Mathf.Log10(abs_MRC_H) + 23.0f - NoiseLevelInDB;
 
-        /*
-        if (Mathf.Abs(SNR - SNR_MRC) > 10)
-        {
-            Debug.Log("MRC is too good to be true!");
-        }
-        */
-
+        
         SNR_avg += SNR;
         MRC_SNR_avg += SNR_MRC;
         if (FrameCounter % 10 == 0)
@@ -1112,8 +1126,8 @@ public partial class ChannelGenManager : MonoBehaviour
         }
         */
 
-        h_save.Add(h_snapshot);
-        H_save.Add(H_snapshot);
+        //h_save.Add(h_snapshot);
+        //H_save.Add(H_snapshot);
 
         Drawing.drawChart(tfTime, X_inputValues, Y_output, "time");
         Drawing.drawChart(tfFreq, X_inputValues, H_output, "frequency");

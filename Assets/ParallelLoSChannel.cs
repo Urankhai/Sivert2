@@ -102,7 +102,7 @@ public struct MA_ParallelLoSChannel : IJobParallelFor
 
             HLoS[index] = LoS_gain * ExpLoS + ground_gain * ExpGround;
 
-            float asd = 1;
+            //float asd = 1;
         }
         else
         { HLoS[index] = 0; }
