@@ -158,7 +158,7 @@ public partial class ChannelGenManager : MonoBehaviour
     NativeArray<RaycastCommand> MA_commands; // for DMCs
     NativeArray<RaycastHit> MA_results; // for DMCs
 
-    static readonly int FFTNum = 64;
+    static readonly int FFTNum = 1024;
     public System.Numerics.Complex[] H = new System.Numerics.Complex[FFTNum]; // Half of LTE BandWidth, instead of 2048 subcarriers
 
     
@@ -424,7 +424,7 @@ public partial class ChannelGenManager : MonoBehaviour
     //void Update()
     {
         FrameCounter++;
-        /*
+        
         #region Writing data into csv file
         
         if (Mathf.Abs(-18.0f - CarCoordinates[1].z) < 1.0f)
@@ -462,7 +462,7 @@ public partial class ChannelGenManager : MonoBehaviour
         }
         
         #endregion
-        */
+        
         #region Defining edges of seen areas for all links (The duration is about 20 micro seconds)
         AreaOverlaps areaOverlaps = new AreaOverlaps
         {
@@ -1051,19 +1051,23 @@ public partial class ChannelGenManager : MonoBehaviour
         // MRC
         var MRC_links = new int[] { 0, 1 };
 
+        double ONE_H = 0;
         double MRC_H = 0;
         for (int sub_i = 0; sub_i < H.Length; sub_i++)
         {
+            ONE_H += MA_H_ToT[sub_i + MRC_links[0] * FFTNum].Real * MA_H_ToT[sub_i + MRC_links[0] * FFTNum].Real + MA_H_ToT[sub_i + MRC_links[0] * FFTNum].Imaginary * MA_H_ToT[sub_i + MRC_links[0] * FFTNum].Imaginary;
             for (int i = 0; i < MRC_links.Length; i++)
             {
                 MRC_H += MA_H_ToT[sub_i + MRC_links[i] * FFTNum].Real * MA_H_ToT[sub_i + MRC_links[i] * FFTNum].Real + MA_H_ToT[sub_i + MRC_links[i] * FFTNum].Imaginary * MA_H_ToT[sub_i + MRC_links[i] * FFTNum].Imaginary;
             }
         }
         float abs_MRC_H = (float)MRC_H/FFTNum;
+        float abs_ONE_H = (float)ONE_H / FFTNum;
         float SNR_MRC = 10 * Mathf.Log10(abs_MRC_H) + 23.0f - NoiseLevelInDB;
+        float SNR_ONE = 10 * Mathf.Log10(abs_ONE_H) + 23.0f - NoiseLevelInDB;
 
-        
-        SNR_avg += SNR;
+
+        SNR_avg += SNR_ONE;
         MRC_SNR_avg += SNR_MRC;
         if (FrameCounter % 10 == 0)
         {
