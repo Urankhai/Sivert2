@@ -424,13 +424,17 @@ public partial class ChannelGenManager : MonoBehaviour
     //void Update()
     {
         FrameCounter++;
+        if (FrameCounter == 1)
+        {
+            Debug.Log("Police car position is " + CarCoordinates[0]);
+        }
         
         #region Writing data into csv file
         
         //if (Mathf.Abs(-18.0f - CarCoordinates[1].z) < 1.0f)
-        if (FrameCounter > 300)
+        if (FrameCounter > 600)
         {
-            Debug.Log("Frame number = " + FrameCounter + "; car coordinates" + CarCoordinates[1]);
+            Debug.Log("Frame number = " + FrameCounter + "; car coordinates" + CarCoordinates[0]);
             NeigbouringCount++;
             if (NeigbouringCount == 1)
             {
