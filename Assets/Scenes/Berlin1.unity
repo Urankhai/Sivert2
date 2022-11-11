@@ -1743,7 +1743,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 2
-  m_Speed: 10
+  m_Speed: 1
   m_Acceleration: 20
   avoidancePriority: 2
   m_AngularSpeed: 120
@@ -1793,10 +1793,10 @@ MonoBehaviour:
   - {fileID: 1677215672}
   - {fileID: 561843457}
   radiation_patterns:
-  - {fileID: 4900000, guid: 83f12396afef0a34fbd1cdbe1ef91c60, type: 3}
-  - {fileID: 4900000, guid: 83f12396afef0a34fbd1cdbe1ef91c60, type: 3}
-  - {fileID: 4900000, guid: 83f12396afef0a34fbd1cdbe1ef91c60, type: 3}
-  - {fileID: 4900000, guid: 83f12396afef0a34fbd1cdbe1ef91c60, type: 3}
+  - {fileID: 4900000, guid: 0430d45de02736542b47f3f1edcdaf5f, type: 3}
+  - {fileID: 4900000, guid: 0430d45de02736542b47f3f1edcdaf5f, type: 3}
+  - {fileID: 4900000, guid: 0430d45de02736542b47f3f1edcdaf5f, type: 3}
+  - {fileID: 4900000, guid: 0430d45de02736542b47f3f1edcdaf5f, type: 3}
   radiationPatternActive: 1
 --- !u!1 &310858546
 GameObject:
@@ -3675,7 +3675,7 @@ MonoBehaviour:
   TransmittingCarID: 1
   TransmittingAntennaID: 0
   links_IDs: 
-  filename: MRC_Evaluation_Helix.csv
+  filename: MRC_Evaluation_Iso_Slow.csv
   tfTime: {fileID: 1144777040}
   tfFreq: {fileID: 956427315}
   DrawingOverlaps: 0
@@ -3808,7 +3808,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 2
-  m_Speed: 11.16
+  m_Speed: 1
   m_Acceleration: 20
   avoidancePriority: 1
   m_AngularSpeed: 120

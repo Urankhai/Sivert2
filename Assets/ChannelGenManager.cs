@@ -158,7 +158,7 @@ public partial class ChannelGenManager : MonoBehaviour
     NativeArray<RaycastCommand> MA_commands; // for DMCs
     NativeArray<RaycastHit> MA_results; // for DMCs
 
-    static readonly int FFTNum = 1024;
+    static readonly int FFTNum = 64;
     public System.Numerics.Complex[] H = new System.Numerics.Complex[FFTNum]; // Half of LTE BandWidth, instead of 2048 subcarriers
 
     
@@ -427,7 +427,8 @@ public partial class ChannelGenManager : MonoBehaviour
         
         #region Writing data into csv file
         
-        if (Mathf.Abs(-18.0f - CarCoordinates[1].z) < 1.0f)
+        //if (Mathf.Abs(-18.0f - CarCoordinates[1].z) < 1.0f)
+        if (FrameCounter > 300)
         {
             Debug.Log("Frame number = " + FrameCounter + "; car coordinates" + CarCoordinates[1]);
             NeigbouringCount++;
