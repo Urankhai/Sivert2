@@ -432,7 +432,7 @@ public partial class ChannelGenManager : MonoBehaviour
         #region Writing data into csv file
         
         //if (Mathf.Abs(-18.0f - CarCoordinates[1].z) < 1.0f)
-        if (FrameCounter > 600)
+        if (FrameCounter > 1200)
         {
             Debug.Log("Frame number = " + FrameCounter + "; car coordinates" + CarCoordinates[0]);
             NeigbouringCount++;
